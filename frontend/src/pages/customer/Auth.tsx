@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, Phone, User, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Phone, User, ShieldCheck, ArrowRight, Building, UserCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 
 export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+  const [role, setRole] = useState<'customer' | 'renter'>('customer');
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Default pre-filled credentials for testing convenience
   const [email, setEmail] = useState('elena.vance@studio-noir.com');
   const [password, setPassword] = useState('GothicNoir2026!');
   const [name, setName] = useState('Elena Vance');
   const [phone, setPhone] = useState('+91 98765 43210');
+  const [company, setCompany] = useState('Studio Noir Atelier');
+
   const [rememberMe, setRememberMe] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -19,16 +24,19 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const { login } = useAuth();
   const { showToast } = useToast();
 
-  const calculatePasswordStrength = (pass: string) => {
-    let score = 0;
-    if (pass.length >= 8) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
-    return score;
+  const handleRoleChange = (selectedRole: 'customer' | 'renter') => {
+    setRole(selectedRole);
+    setErrors({});
+    if (selectedRole === 'renter') {
+      setEmail('marcus.sterling@rovia-ops.com');
+      setName('Marcus Sterling');
+      setCompany('ROVIA Central Operations');
+    } else {
+      setEmail('elena.vance@studio-noir.com');
+      setName('Elena Vance');
+      setCompany('Studio Noir Atelier');
+    }
   };
-
-  const strength = calculatePasswordStrength(password);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +60,11 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     }
 
     setErrors({});
-    login(email, 'customer');
+    // Log in as selected role
+    login(email, role === 'renter' ? 'admin' : 'customer');
     showToast(
-      isSignUp ? 'Account Created Successfully!' : 'Welcome Back to ROVIA!',
-      `Logged in as ${email}`,
+      isSignUp ? 'Account & Profile Created!' : `Welcome Back, ${role === 'renter' ? 'Renter Admin' : 'Customer'}!`,
+      `Logged in as ${name} (${role === 'renter' ? 'Operations Renter' : 'Portal User'})`,
       'success'
     );
     onSuccess();
@@ -63,10 +72,9 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
   return (
     <div className="w-full min-h-[80vh] flex items-center justify-center p-4 my-6 page-transition">
-      <div className="w-full max-w-5xl glass-panel rounded-3xl overflow-hidden border border-[#988686]/30 shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
-        {/* Left 45% Styled Brand Panel */}
+      <div className="w-full max-w-5xl glass-panel rounded-3xl overflow-hidden border border-[#988686]/30 shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+        {/* Left Brand Panel */}
         <div className="lg:col-span-5 relative bg-[#0D0B0B] p-8 sm:p-12 flex flex-col justify-between overflow-hidden">
-          {/* Moody Duotone Background Image Overlay */}
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-color-dodge pointer-events-none"
             style={{
@@ -90,70 +98,91 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
             </div>
           </div>
 
-          {/* Brand Headline */}
+          {/* Dynamic Role Headline */}
           <div className="relative z-10 space-y-4 my-8">
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
-              Access Editorial Cinema Gear & Luxury Sets
+              {role === 'renter'
+                ? 'Renter Operations & Inventory Console'
+                : 'Customer Rental Portal & Atelier'}
             </h2>
             <p className="text-xs text-[#D1D0D0] leading-relaxed font-light">
-              Log in to manage your active rental period, download instant GST invoices, inspect security deposit ledgers, and request return pickups.
+              {role === 'renter'
+                ? 'Configure organization pricelists, time-bound rental periods, quotation templates, asset QR tracking, and late fee deposit deductions.'
+                : 'Browse universal rental products, select delivery or store pickup, authorize 100% refundable deposits, and download tax invoices.'}
             </p>
           </div>
 
-          {/* Bottom Security Trust Pill */}
           <div className="relative z-10 flex items-center gap-2 text-xs text-[#988686] font-mono border-t border-[#988686]/30 pt-4">
             <ShieldCheck className="w-4 h-4 text-[#5E7A63]" />
-            <span>256-Bit Encrypted Authentication</span>
+            <span>256-Bit Encrypted Dual-Role Portal</span>
           </div>
         </div>
 
-        {/* Right 55% Form Section */}
+        {/* Right Form Section */}
         <div className="lg:col-span-7 bg-[#FFFFFF] dark:bg-[#0D0B0B] p-8 sm:p-12 flex flex-col justify-center">
-          {/* Header & Tabs */}
+          {/* Role Selector Tabs (Customer vs Renter) */}
           <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-3 mb-2 lg:hidden">
-              <img src="/rovia_logo.jpg" alt="ROVIA Logo" className="w-10 h-10 object-contain rounded" />
-              <span className="font-heading text-xl font-bold text-[#000000] dark:text-white">ROVIA</span>
+            <span className="text-[10px] font-mono text-[#988686] uppercase tracking-widest block font-bold">
+              SELECT LOGIN ROLE PORTAL
+            </span>
+            <div className="grid grid-cols-2 gap-3 p-1 rounded-2xl bg-[#988686]/15">
+              <button
+                type="button"
+                onClick={() => handleRoleChange('customer')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                  role === 'customer'
+                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-md'
+                    : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10'
+                }`}
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Customer (Portal User)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleRoleChange('renter')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                  role === 'renter'
+                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-md'
+                    : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10'
+                }`}
+              >
+                <Building className="w-4 h-4" />
+                <span>Renter (Admin / Ops)</span>
+              </button>
             </div>
 
-            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[#000000] dark:text-[#F5F3F3]">
-              {isSignUp ? 'Create Atelier Account' : 'Welcome Back'}
-            </h3>
+            <div className="flex items-center justify-between border-b border-[#D1D0D0]/30 dark:border-[#5C4E4E]/30 pb-3">
+              <h3 className="font-heading text-2xl font-bold text-[#000000] dark:text-[#F5F3F3]">
+                {isSignUp
+                  ? role === 'renter'
+                    ? 'Register Renter Business'
+                    : 'Register Customer Profile'
+                  : role === 'renter'
+                  ? 'Renter Operations Sign In'
+                  : 'Customer Sign In'}
+              </h3>
 
-            {/* Toggle Tabs */}
-            <div className="flex items-center p-1 rounded-xl bg-[#988686]/15 max-w-xs">
-              <button
-                type="button"
-                onClick={() => { setIsSignUp(false); setErrors({}); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  !isSignUp
-                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm'
-                    : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsSignUp(true); setErrors({}); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  isSignUp
-                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm'
-                    : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-                }`}
-              >
-                Register
-              </button>
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-[#988686] font-bold hover:underline"
+                >
+                  {isSignUp ? 'Already registered? Sign In' : 'New user? Register'}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {isSignUp && (
               <>
                 <Input
                   label="Full Name"
-                  placeholder="e.g. Elena Vance"
+                  placeholder={role === 'renter' ? 'e.g. Marcus Sterling' : 'e.g. Elena Vance'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   error={errors.name}
@@ -167,64 +196,46 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
                   error={errors.phone}
                   leftIcon={<Phone className="w-4 h-4" />}
                 />
+                {role === 'renter' && (
+                  <Input
+                    label="Rental Company / Organization Name"
+                    placeholder="e.g. ROVIA Central Operations"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    leftIcon={<Building className="w-4 h-4" />}
+                  />
+                )}
               </>
             )}
 
             <Input
               label="Email Address"
               type="email"
-              placeholder="name@company.com"
+              placeholder="name@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
               leftIcon={<Mail className="w-4 h-4" />}
             />
 
-            <div className="space-y-1">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={errors.password}
-                leftIcon={<Lock className="w-4 h-4" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="focus:outline-none text-[#988686]"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                }
-              />
-
-              {/* Password Strength Meter for Sign Up */}
-              {isSignUp && password.length > 0 && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex items-center gap-1.5 h-1.5 w-full">
-                    {[1, 2, 3, 4].map((step) => (
-                      <div
-                        key={step}
-                        className={`flex-1 h-full rounded-full transition-colors ${
-                          strength >= step
-                            ? strength === 4
-                              ? 'bg-[#5E7A63]'
-                              : strength >= 2
-                              ? 'bg-[#B08A4E]'
-                              : 'bg-[#A0524E]'
-                            : 'bg-[#988686]/20'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-[10px] text-[#988686]">
-                    Password strength: {strength === 4 ? 'Strong (Gothic Secure)' : strength >= 2 ? 'Medium' : 'Weak'}
-                  </span>
-                </div>
-              )}
-            </div>
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
+              leftIcon={<Lock className="w-4 h-4" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="focus:outline-none text-[#988686]"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
+            />
 
             {!isSignUp ? (
               <div className="flex items-center justify-between text-xs pt-1">
@@ -235,7 +246,7 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded border-[#988686] text-[#988686] focus:ring-[#988686]"
                   />
-                  <span>Remember me for 30 days</span>
+                  <span>Remember session for 30 days</span>
                 </label>
                 <button type="button" className="text-[#988686] hover:underline font-semibold">
                   Forgot password?
@@ -251,15 +262,14 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
                     className="rounded border-[#988686] text-[#988686] focus:ring-[#988686] mt-0.5"
                   />
                   <span>
-                    I accept the ROVIA Rental Terms, Security Deposit Conditions, and Damage Policy.
+                    I accept ROVIA Security Deposit Policy, Late Fee Penalty Rules, and Rental Conditions.
                   </span>
                 </label>
-                {errors.terms && <p className="text-[11px] text-[#A0524E] mt-1">{errors.terms}</p>}
               </div>
             )}
 
             <Button type="submit" size="lg" className="w-full mt-4" rightIcon={<ArrowRight className="w-4 h-4" />}>
-              {isSignUp ? 'Complete Registration' : 'Sign In to Account'}
+              {isSignUp ? `Create ${role === 'renter' ? 'Renter Admin' : 'Customer'} Account` : `Sign In as ${role === 'renter' ? 'Renter' : 'Customer'}`}
             </Button>
           </form>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Building, Users, Shield, FileText, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Building, Users, Shield, FileText, Save, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -7,39 +7,57 @@ import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
 
 export const Settings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'Org' | 'Roles' | 'Letterhead'>('Letterhead');
+  const [activeTab, setActiveTab] = useState<'Letterhead' | 'RentalPeriods' | 'Org'>('RentalPeriods');
   const { showToast } = useToast();
 
+  // Letterhead builder state
   const [headerTagline, setHeaderTagline] = useState('RENT • USE • RETURN • REUSE');
   const [footerTerms, setFooterTerms] = useState('All equipment rentals subject to 12-point inspection & security deposit terms.');
 
+  // Rental Period & Penalty Config State (From PDF Odoo Specs)
+  const [minRentalHours, setMinRentalHours] = useState(24);
+  const [maxRentalDays, setMaxRentalDays] = useState(90);
+  const [gracePeriodHours, setGracePeriodHours] = useState(2);
+  const [hourlyLateRateMultiplier, setHourlyLateRateMultiplier] = useState(1.5);
+  const [dailyLateRateMultiplier, setDailyLateRateMultiplier] = useState(2.0);
+  const [maxPenaltyPercentOfDeposit, setMaxPenaltyPercentOfDeposit] = useState(100);
+
   const handleSaveSettings = () => {
-    showToast('Settings Saved', 'Organization letterhead & system settings updated.', 'success');
+    showToast('Rental Configuration Saved!', 'Organization rental periods, late fee rules, and letterhead updated.', 'success');
   };
 
   return (
     <div className="w-full space-y-8 page-transition pb-16">
       <div className="flex items-center justify-between border-b border-[#5C4E4E]/30 pb-4">
         <div>
-          <span className="text-xs font-mono uppercase text-[#988686] tracking-widest">SYSTEM CONFIGURATION</span>
+          <span className="text-xs font-mono uppercase text-[#988686] tracking-widest">RENTER ORGANIZATION CONFIG</span>
           <h1 className="font-heading text-3xl font-bold text-[#000000] dark:text-white mt-1">
-            Organization & Letterhead Settings
+            Rental Periods, Late Fees & Organization Settings
           </h1>
         </div>
 
         <Button leftIcon={<Save className="w-4 h-4" />} onClick={handleSaveSettings}>
-          Save All Settings
+          Save Organization Settings
         </Button>
       </div>
 
-      <div className="flex items-center p-1 rounded-xl bg-[#988686]/15 max-w-sm">
+      {/* Tabs */}
+      <div className="flex items-center p-1 rounded-xl bg-[#988686]/15 max-w-md">
+        <button
+          onClick={() => setActiveTab('RentalPeriods')}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'RentalPeriods' ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+          }`}
+        >
+          Rental Periods & Rules
+        </button>
         <button
           onClick={() => setActiveTab('Letterhead')}
           className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'Letterhead' ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
           }`}
         >
-          Letterhead Builder
+          Quotation Letterhead
         </button>
         <button
           onClick={() => setActiveTab('Org')}
@@ -49,17 +67,73 @@ export const Settings: React.FC = () => {
         >
           Org Profile
         </button>
-        <button
-          onClick={() => setActiveTab('Roles')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'Roles' ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-          }`}
-        >
-          Roles & Permissions
-        </button>
       </div>
 
-      {activeTab === 'Letterhead' ? (
+      {activeTab === 'RentalPeriods' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-xs">
+          {/* Rental Duration Policy */}
+          <div className="lg:col-span-6 space-y-4 glass-panel p-6 rounded-2xl border border-[#988686]/30">
+            <h3 className="font-heading text-lg font-bold text-[#000000] dark:text-white border-b border-[#988686]/30 pb-2 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#988686]" />
+              Rental Window Duration Limits
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Minimum Rental Duration (Hours)"
+                type="number"
+                value={minRentalHours}
+                onChange={(e) => setMinRentalHours(Number(e.target.value))}
+              />
+              <Input
+                label="Maximum Rental Duration (Days)"
+                type="number"
+                value={maxRentalDays}
+                onChange={(e) => setMaxRentalDays(Number(e.target.value))}
+              />
+            </div>
+            <Input
+              label="Grace Period Before Late Charge (Hours)"
+              type="number"
+              value={gracePeriodHours}
+              onChange={(e) => setGracePeriodHours(Number(e.target.value))}
+              helperText="No penalty is charged if returned within this grace window."
+            />
+          </div>
+
+          {/* Late Return Penalty Rules */}
+          <div className="lg:col-span-6 space-y-4 glass-panel p-6 rounded-2xl border border-[#988686]/30">
+            <h3 className="font-heading text-lg font-bold text-[#000000] dark:text-white border-b border-[#988686]/30 pb-2 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-[#B08A4E]" />
+              Late Return Fee Auto-Deduction Rules
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Hourly Overdue Multiplier"
+                type="number"
+                step="0.1"
+                value={hourlyLateRateMultiplier}
+                onChange={(e) => setHourlyLateRateMultiplier(Number(e.target.value))}
+                helperText="e.g. 1.5x hourly base rate"
+              />
+              <Input
+                label="Daily Overdue Multiplier"
+                type="number"
+                step="0.1"
+                value={dailyLateRateMultiplier}
+                onChange={(e) => setDailyLateRateMultiplier(Number(e.target.value))}
+                helperText="e.g. 2.0x daily rate per overdue day"
+              />
+            </div>
+            <Input
+              label="Maximum Deposit Penalty Cap (%)"
+              type="number"
+              value={maxPenaltyPercentOfDeposit}
+              onChange={(e) => setMaxPenaltyPercentOfDeposit(Number(e.target.value))}
+              helperText="Maximum percentage of held deposit that can be deducted."
+            />
+          </div>
+        </div>
+      ) : activeTab === 'Letterhead' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-6 space-y-4 glass-panel p-6 rounded-2xl border border-[#988686]/30">
             <h3 className="font-heading text-lg font-bold text-[#000000] dark:text-white border-b border-[#988686]/30 pb-2">
@@ -93,8 +167,8 @@ export const Settings: React.FC = () => {
         </div>
       ) : (
         <Card className="p-6">
-          <h3 className="font-heading text-lg font-bold text-[#000000] dark:text-white">Organization Settings Panel</h3>
-          <p className="text-xs text-[#988686] mt-1">Configured for ROVIA Management Systems Inc. (Mumbai HQ)</p>
+          <h3 className="font-heading text-lg font-bold text-[#000000] dark:text-white">ROVIA Organization Profile</h3>
+          <p className="text-xs text-[#988686] mt-1">Registered Renter Account: ROVIA Central Operations (Mumbai HQ)</p>
         </Card>
       )}
     </div>
