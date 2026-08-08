@@ -9,6 +9,10 @@ from app.rentals.router import router as rentals_router
 from app.pricing.router import router as pricing_router
 from app.payments.router import router as payments_router
 from app.deposits.router import router as deposits_router
+from app.operations.router import router as operations_router
+from app.trust.router import router as trust_router
+from app.maintenance.router import router as maintenance_router
+from app.analytics.router import router as analytics_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -18,6 +22,13 @@ api_router.include_router(rentals_router)
 api_router.include_router(pricing_router)
 api_router.include_router(payments_router)
 api_router.include_router(deposits_router)
+api_router.include_router(operations_router)
+api_router.include_router(trust_router)
+api_router.include_router(maintenance_router)
+api_router.include_router(analytics_router)
+
+
+
 
 @api_router.get("/health")
 async def health_check():

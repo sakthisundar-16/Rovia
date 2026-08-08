@@ -23,6 +23,12 @@ from app.assets.models import ProductAsset
 from app.rentals.models import Rental, RentalItem
 from app.deposits.models import DepositAccount, DepositLedgerEntry
 from app.payments.models import Payment
+from app.operations.models import DamageReport
+from app.trust.models import CustomerTrust, TrustHistory
+from app.maintenance.models import MaintenanceTicket
+from app.notifications.models import Notification
+
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

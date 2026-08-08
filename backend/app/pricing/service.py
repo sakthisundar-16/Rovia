@@ -35,9 +35,13 @@ class PricingService:
             item_total = unit_price * days * item.quantity
             subtotal += item_total
             
-            # Simple deposit calculation: fixed amount per unit (from product.security_deposit_configuration)
-            # Future expansion could support percentage-based deposits here
+            # Basic security deposit sum
             security_deposit += (product.security_deposit_configuration * item.quantity)
+            
+        if data.customer_id and security_deposit > Decimal('0.00'):
+            from app.trust.service import TrustService
+            smart_deposit = await TrustService.calculate_smart_deposit(db, org_id, data.customer_id, security_deposit)
+            security_deposit = smart_deposit.required_deposit
             
         discount = Decimal('0.00')
         tax = Decimal('0.00') # Tax engine placeholder
@@ -53,3 +57,21 @@ class PricingService:
             total_due=total_due,
             currency="INR"
         )
+
+    @staticmethod
+    def calculate_late_fee(expected_return, actual_return, hourly_rate: Decimal, grace_minutes: int = 30, penalty_percentage: Decimal = Decimal('1.5'), max_cap: Decimal = Decimal('10000.00')) -> Decimal:
+        import math
+        if actual_return <= expected_return:
+            return Decimal('0.00')
+            
+        delta = actual_return - expected_return
+        minutes_late = int(delta.total_seconds() / 60)
+        
+        if minutes_late <= grace_minutes:
+            return Decimal('0.00')
+            
+        chargeable_hours = math.ceil((minutes_late - grace_minutes) / 60.0)
+        fee = Decimal(str(chargeable_hours)) * hourly_rate * penalty_percentage
+        fee = min(fee, max_cap)
+        return fee.quantize(Decimal('0.00'))
+

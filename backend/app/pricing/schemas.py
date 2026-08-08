@@ -13,6 +13,7 @@ class PricingPreviewRequest(BaseModel):
     start_datetime: datetime
     expected_return_datetime: datetime
     items: List[PricingItemRequest]
+    customer_id: Optional[UUID] = None
 
 class PricingPreviewResponse(BaseModel):
     subtotal: Decimal

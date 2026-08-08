@@ -77,3 +77,59 @@ class DepositService:
         await db.commit()
         
         return await DepositService.get_deposit_account(db, org_id, rental_id)
+
+    @staticmethod
+    async def settle_deposit(db: AsyncSession, org_id: uuid.UUID, rental_id: uuid.UUID, late_fee: Decimal = Decimal('0.00'), damage_fee: Decimal = Decimal('0.00'), missing_item_fee: Decimal = Decimal('0.00')) -> DepositAccount:
+        account = await DepositService.get_deposit_account(db, org_id, rental_id)
+        if account.status not in [DepositStatus.HELD, DepositStatus.REQUIRED]:
+            # Can only settle if held (or if no deposit required but we need to record fees anyway)
+            pass
+            
+        if late_fee > 0:
+            db.add(DepositLedgerEntry(
+                organization_id=org_id,
+                account_id=account.id,
+                entry_type=LedgerEntryType.LATE_FEE_DEDUCTION,
+                amount=late_fee,
+                notes="Late return fee"
+            ))
+            
+        if damage_fee > 0:
+            db.add(DepositLedgerEntry(
+                organization_id=org_id,
+                account_id=account.id,
+                entry_type=LedgerEntryType.DAMAGE_DEDUCTION,
+                amount=damage_fee,
+                notes="Damage assessment deduction"
+            ))
+            
+        if missing_item_fee > 0:
+            db.add(DepositLedgerEntry(
+                organization_id=org_id,
+                account_id=account.id,
+                entry_type=LedgerEntryType.MISSING_ITEM_DEDUCTION,
+                amount=missing_item_fee,
+                notes="Missing item deduction"
+            ))
+            
+        await db.commit()
+        await db.refresh(account)
+        
+        # Calculate refund
+        account = await DepositService.get_deposit_account(db, org_id, rental_id)
+        
+        if account.refundable_amount > 0:
+            db.add(DepositLedgerEntry(
+                organization_id=org_id,
+                account_id=account.id,
+                entry_type=LedgerEntryType.REFUND,
+                amount=account.refundable_amount,
+                notes="Deposit refund"
+            ))
+            # If there was a real payment gateway, trigger refund here.
+            
+        account.status = DepositStatus.SETTLED
+        await db.commit()
+        
+        return await DepositService.get_deposit_account(db, org_id, rental_id)
+

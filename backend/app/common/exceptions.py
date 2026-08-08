@@ -13,6 +13,14 @@ class EmailAlreadyExistsException(AppException):
     def __init__(self):
         super().__init__(status.HTTP_400_BAD_REQUEST, "Email already exists", "EMAIL_ALREADY_EXISTS")
 
+class InvalidQRException(AppException):
+    def __init__(self):
+        super().__init__(status.HTTP_400_BAD_REQUEST, "Invalid QR code", "INVALID_QR")
+
+class OperationsException(AppException):
+    def __init__(self, detail: str):
+        super().__init__(status.HTTP_400_BAD_REQUEST, detail, "OPERATIONS_ERROR")
+
 class OrganizationNotFoundException(AppException):
     def __init__(self):
         super().__init__(status.HTTP_404_NOT_FOUND, "Organization not found", "ORGANIZATION_NOT_FOUND")
