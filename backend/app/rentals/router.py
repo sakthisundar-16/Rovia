@@ -4,7 +4,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.core.database import get_db
-from app.rentals.schemas import RentalCreate, RentalResponse, RentalTransitionRequest
+from app.rentals.schemas import RentalCreate, RentalResponse, RentalTransitionRequest, RentalExtensionRequest, RentalExtensionResponse
 from app.rentals.service import RentalService
 from app.common.dependencies import get_current_active_user, require_operations
 from app.common.enums import RentalStatus
@@ -72,6 +72,34 @@ async def cancel_rental(
     # Customer can cancel their own eligible rentals.
     await RentalService.cancel_rental(db, current_user.organization_id, id, current_user)
     return {"message": "Rental cancelled successfully"}
+
+@router.post("/{id}/extension", response_model=RentalExtensionResponse)
+async def request_extension(
+    id: UUID,
+    data: RentalExtensionRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    return await RentalService.request_extension(
+        db, 
+        current_user.organization_id, 
+        id, 
+        data.additional_days, 
+        current_user
+    )
+
+@router.post("/{id}/mark-no-show", response_model=RentalResponse)
+async def mark_no_show(
+    id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_operations)
+):
+    return await RentalService.mark_no_show(
+        db, 
+        current_user.organization_id, 
+        id, 
+        current_user
+    )
 
 from fastapi.responses import Response
 @router.get("/{id}/invoice")

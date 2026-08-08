@@ -22,3 +22,17 @@ class Notification(Base):
     error_message = Column(String, nullable=True)
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+class NotificationTemplate(Base):
+    __tablename__ = "notification_templates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    
+    name = Column(String(100), nullable=False)
+    language = Column(String(10), nullable=False, default="en")
+    subject_template = Column(String(255), nullable=True)
+    body_template = Column(String, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)

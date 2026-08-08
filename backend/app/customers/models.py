@@ -19,6 +19,7 @@ class Customer(Base):
     phone = Column(String(50), nullable=True)
     address = Column(String(500), nullable=True)
     status = Column(SAEnum(CustomerStatus), default=CustomerStatus.ACTIVE, nullable=False)
+    preferred_language = Column(String(10), default="en", nullable=False)
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)

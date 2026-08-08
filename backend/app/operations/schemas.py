@@ -20,3 +20,18 @@ class ReturnRequest(BaseModel):
     assets: List[AssetReturnInfo]
     notes: Optional[str] = None
 
+class SyncAction(BaseModel):
+    action_id: str
+    action_type: str # PICKUP, RETURN
+    rental_id: uuid.UUID
+    payload: dict
+    timestamp: datetime
+
+class SyncRequest(BaseModel):
+    actions: List[SyncAction]
+
+class SyncResponse(BaseModel):
+    processed: int
+    failed: int
+    results: dict # action_id -> "SUCCESS" | "FAILED"
+

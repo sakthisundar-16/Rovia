@@ -2,6 +2,7 @@ import uuid
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from datetime import datetime, timezone
 
 from app.rentals.models import Rental
 from app.rentals.service import RentalService
@@ -96,13 +97,15 @@ class OperationsService:
             await AssetService.transition_asset(db, org_id, asset.id, AssetStatus.RETURN_INSPECTION)
             
             if is_damaged:
-                from app.maintenance.models import MaintenanceTicket
+                from app.maintenance.models import MaintenanceTicket, MaintenanceStatus
                 ticket = MaintenanceTicket(
                     organization_id=org_id,
                     asset_id=asset.id,
+                    rental_id=rental_id,
                     issue=asset_info.damage_notes or "Automatic ticket created due to damage on return.",
                     severity="CRITICAL" if asset.condition.value == "CRITICAL" else "MAJOR",
-                    status="OPEN"
+                    status=MaintenanceStatus.OPEN,
+                    repair_cost=asset_info.estimated_charge
                 )
                 db.add(ticket)
                 await AssetService.transition_asset(db, org_id, asset.id, AssetStatus.MAINTENANCE)
@@ -131,6 +134,13 @@ class OperationsService:
         
         damage_fee = sum([a.estimated_charge for a in data.assets])
         
+        if rental.has_protection_plan and rental.protection_limit > 0:
+            # Plan covers up to the limit, so customer pays what exceeds the limit
+            if damage_fee > rental.protection_limit:
+                damage_fee -= rental.protection_limit
+            else:
+                damage_fee = Decimal('0.00')
+        
         if rental.security_deposit_amount > Decimal('0.00'):
             await DepositService.settle_deposit(db, org_id, rental_id, late_fee=late_fee, damage_fee=damage_fee)
             
@@ -148,3 +158,58 @@ class OperationsService:
         
         return rental
 
+    @staticmethod
+    async def process_sync(db: AsyncSession, org_id: uuid.UUID, data: "SyncRequest", actor: User) -> "SyncResponse":
+        from app.operations.models import OfflineAction, OfflineActionStatus
+        from app.operations.schemas import SyncResponse, PickupRequest, ReturnRequest
+        from sqlalchemy import select
+        
+        processed = 0
+        failed = 0
+        results = {}
+
+        for action in data.actions:
+            stmt = select(OfflineAction).where(OfflineAction.action_id == action.action_id)
+            existing = (await db.execute(stmt)).scalars().first()
+            
+            if existing and existing.status == OfflineActionStatus.SUCCESS:
+                results[action.action_id] = "SUCCESS"
+                continue
+            
+            offline_action = existing or OfflineAction(
+                organization_id=org_id,
+                action_id=action.action_id,
+                action_type=action.action_type,
+                rental_id=action.rental_id,
+                payload=action.payload,
+                created_by=actor.id
+            )
+            if not existing:
+                db.add(offline_action)
+            await db.commit() # Save pending status
+            
+            try:
+                if action.action_type == "PICKUP":
+                    pickup_req = PickupRequest(**action.payload)
+                    await OperationsService.process_pickup(db, org_id, action.rental_id, pickup_req.scanned_qr_tokens, actor, pickup_req.notes)
+                elif action.action_type == "RETURN":
+                    return_req = ReturnRequest(**action.payload)
+                    await OperationsService.process_return(db, org_id, action.rental_id, return_req, actor)
+                else:
+                    raise ValueError(f"Unknown action type {action.action_type}")
+                
+                offline_action.status = OfflineActionStatus.SUCCESS
+                offline_action.processed_at = datetime.now(timezone.utc)
+                results[action.action_id] = "SUCCESS"
+                processed += 1
+            except Exception as e:
+                offline_action.status = OfflineActionStatus.FAILED
+                offline_action.error_message = str(e)
+                offline_action.processed_at = datetime.now(timezone.utc)
+                results[action.action_id] = "FAILED"
+                failed += 1
+                
+            db.add(offline_action)
+            await db.commit()
+            
+        return SyncResponse(processed=processed, failed=failed, results=results)

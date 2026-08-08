@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.common.dependencies import get_current_user, require_operations
 from app.users.models import User
 from app.common.enums import UserRole
-from app.operations.schemas import PickupRequest, ReturnRequest
+from app.operations.schemas import PickupRequest, ReturnRequest, SyncRequest, SyncResponse
 from app.operations.service import OperationsService
 from app.rentals.schemas import RentalResponse
 
@@ -45,3 +45,15 @@ async def process_return(
     )
     return rental
 
+@router.post("/sync", response_model=SyncResponse)
+async def process_sync(
+    data: SyncRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_operations)
+):
+    return await OperationsService.process_sync(
+        db=db,
+        org_id=current_user.organization_id,
+        data=data,
+        actor=current_user
+    )

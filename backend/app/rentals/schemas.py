@@ -15,6 +15,7 @@ class RentalCreate(BaseModel):
     expected_return_datetime: datetime
     pickup_method: PickupMethod = PickupMethod.IN_STORE
     notes: Optional[str] = None
+    has_protection_plan: bool = False
     items: List[RentalItemCreate]
 
 class RentalTransitionRequest(BaseModel):
@@ -43,6 +44,9 @@ class RentalResponse(BaseModel):
     actual_return_datetime: Optional[datetime]
     pickup_method: PickupMethod
     notes: Optional[str]
+    has_protection_plan: bool
+    protection_fee: Decimal
+    protection_limit: Decimal
     subtotal: Decimal
     discount_amount: Decimal
     tax_amount: Decimal
@@ -52,4 +56,20 @@ class RentalResponse(BaseModel):
     updated_at: datetime
     items: List[RentalItemResponse] = []
 
+    model_config = ConfigDict(from_attributes=True)
+
+class RentalExtensionRequest(BaseModel):
+    additional_days: int
+
+class RentalExtensionResponse(BaseModel):
+    id: UUID
+    rental_id: UUID
+    previous_end_datetime: datetime
+    new_end_datetime: datetime
+    additional_days: int
+    additional_amount: Decimal
+    requested_at: datetime
+    approved_at: Optional[datetime]
+    status: str
+    
     model_config = ConfigDict(from_attributes=True)

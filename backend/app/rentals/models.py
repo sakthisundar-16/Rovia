@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Enum as SAEnum, UniqueConstraint, Numeric
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Enum as SAEnum, UniqueConstraint, Numeric, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -22,6 +22,10 @@ class Rental(Base):
     
     pickup_method = Column(SAEnum(PickupMethod), default=PickupMethod.IN_STORE, nullable=False)
     notes = Column(String, nullable=True)
+    
+    has_protection_plan = Column(Boolean, default=False, nullable=False)
+    protection_fee = Column(Numeric(10, 2), nullable=False, default=0.00)
+    protection_limit = Column(Numeric(10, 2), nullable=False, default=0.00)
     
     subtotal = Column(Numeric(10, 2), nullable=False, default=0.00)
     discount_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
@@ -62,3 +66,21 @@ class RentalItem(Base):
     product = relationship("Product")
     variant = relationship("ProductVariant")
     asset = relationship("ProductAsset")
+
+class RentalExtension(Base):
+    __tablename__ = "rental_extensions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    rental_id = Column(UUID(as_uuid=True), ForeignKey("rentals.id", ondelete="CASCADE"), index=True, nullable=False)
+    previous_end_datetime = Column(DateTime(timezone=True), nullable=False)
+    new_end_datetime = Column(DateTime(timezone=True), nullable=False)
+    additional_days = Column(Integer, nullable=False)
+    additional_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
+    requested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    requested_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # We must import ExtensionStatus locally or ensure it's imported at top
+    status = Column(String(50), nullable=False, default="PENDING")
+    
+    rental = relationship("Rental")

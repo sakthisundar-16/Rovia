@@ -4,14 +4,14 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
-from app.customers.models import Customer
+from app.users.models import User
 
 class CustomerTrust(Base):
     __tablename__ = "customer_trusts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), unique=True, index=True, nullable=False)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True, nullable=False)
     
     score = Column(Integer, default=50, nullable=False)
     total_completed_rentals = Column(Integer, default=0, nullable=False)
@@ -20,7 +20,7 @@ class CustomerTrust(Base):
     
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    customer = relationship("Customer")
+    customer = relationship("User")
     history = relationship("TrustHistory", back_populates="trust_profile")
 
 class TrustHistory(Base):

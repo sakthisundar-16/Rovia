@@ -54,6 +54,7 @@ class RentalStatus(str, enum.Enum):
     SETTLEMENT = "SETTLEMENT"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
+    NO_SHOW = "NO_SHOW"
 
 class PickupMethod(str, enum.Enum):
     IN_STORE = "IN_STORE"
@@ -88,3 +89,8 @@ class LedgerEntryType(str, enum.Enum):
     OTHER_DEDUCTION = "OTHER_DEDUCTION"
     REFUND = "REFUND"
     ADJUSTMENT = "ADJUSTMENT"
+
+class ExtensionStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"

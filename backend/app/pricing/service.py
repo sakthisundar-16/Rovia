@@ -43,15 +43,23 @@ class PricingService:
             smart_deposit = await TrustService.calculate_smart_deposit(db, org_id, data.customer_id, security_deposit)
             security_deposit = smart_deposit.required_deposit
             
+        protection_fee = Decimal('0.00')
+        protection_limit = Decimal('0.00')
+        if data.has_protection_plan:
+            protection_fee = subtotal * Decimal('0.10') # 10% of subtotal
+            protection_limit = protection_fee * Decimal('10') # covers up to 10x the fee
+            
         discount = Decimal('0.00')
         tax = Decimal('0.00') # Tax engine placeholder
-        rental_total = subtotal - discount + tax
+        rental_total = subtotal + protection_fee - discount + tax
         total_due = rental_total + security_deposit
         
         return PricingPreviewResponse(
             subtotal=subtotal,
             discount=discount,
             tax=tax,
+            protection_fee=protection_fee,
+            protection_limit=protection_limit,
             rental_total=rental_total,
             security_deposit=security_deposit,
             total_due=total_due,

@@ -17,6 +17,7 @@ class User(Base):
     last_name = Column(String(100), nullable=False)
     role = Column(SAEnum(UserRole), default=UserRole.CUSTOMER, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    preferred_language = Column(String(10), default="en", nullable=False)
     
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

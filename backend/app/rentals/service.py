@@ -7,11 +7,11 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, and_, update
 
-from app.rentals.models import Rental, RentalItem
+from app.rentals.models import Rental, RentalItem, RentalExtension
 from app.rentals.schemas import RentalCreate
 from app.products.models import Product
 from app.assets.models import ProductAsset
-from app.common.enums import RentalStatus, AssetStatus
+from app.common.enums import RentalStatus, AssetStatus, ExtensionStatus
 from app.common.exceptions import (
     RentalNotFoundException,
     InvalidRentalTransitionException,
@@ -161,11 +161,15 @@ class RentalService:
         pricing_req = PricingPreviewRequest(
             start_datetime=data.start_datetime,
             expected_return_datetime=data.expected_return_datetime,
+            has_protection_plan=data.has_protection_plan,
             items=[PricingItemRequest(product_id=i.product_id, variant_id=i.variant_id, quantity=i.quantity) for i in data.items]
         )
         
         preview = await PricingService.calculate_preview(db, org_id, pricing_req)
         
+        rental.has_protection_plan = data.has_protection_plan
+        rental.protection_fee = preview.protection_fee
+        rental.protection_limit = preview.protection_limit
         rental.subtotal = preview.subtotal
         rental.discount_amount = preview.discount
         rental.tax_amount = preview.tax
@@ -277,8 +281,11 @@ class RentalService:
         if target_status in [RentalStatus.CANCELLED, RentalStatus.COMPLETED]:
             for item in rental.items:
                 if item.asset_id:
-                    # In real life, might go to RETURN_INSPECTION. For cancellation, it goes to AVAILABLE.
-                    await db.execute(update(ProductAsset).where(ProductAsset.id == item.asset_id).values(status=AssetStatus.AVAILABLE))
+                    # Check current status before forcing AVAILABLE
+                    asset_check = await db.execute(select(ProductAsset.status).where(ProductAsset.id == item.asset_id))
+                    curr_status = asset_check.scalar_one_or_none()
+                    if curr_status not in [AssetStatus.MAINTENANCE, AssetStatus.RETIRED]:
+                        await db.execute(update(ProductAsset).where(ProductAsset.id == item.asset_id).values(status=AssetStatus.AVAILABLE))
 
         await db.commit()
         await db.refresh(rental)
@@ -290,7 +297,27 @@ class RentalService:
         if rental.status not in [RentalStatus.DRAFT, RentalStatus.QUOTED, RentalStatus.CONFIRMED, RentalStatus.PAYMENT_PENDING]:
             raise InvalidRentalTransitionException()
             
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        time_until_start = rental.start_datetime - now
+        
+        penalty_amount = Decimal('0.00')
+        # Only apply penalty if confirmed and it's less than 24h away
+        if rental.status in [RentalStatus.CONFIRMED]:
+            if time_until_start < timedelta(hours=24) and time_until_start > timedelta(0):
+                # 50% cancellation fee
+                penalty_amount = rental.subtotal * Decimal('0.50')
+                
+        if penalty_amount > Decimal('0.00') and rental.security_deposit_amount > Decimal('0.00'):
+            from app.deposits.service import DepositService
+            from app.common.exceptions import DepositNotFoundException
+            try:
+                await DepositService.settle_deposit(db, org_id, rental.id, cancellation_fee=penalty_amount)
+            except DepositNotFoundException:
+                pass
+                
         rental.status = RentalStatus.CANCELLED
+        rental.updated_at = datetime.now(timezone.utc)
         
         # Release assets
         for item in rental.items:
@@ -298,3 +325,91 @@ class RentalService:
                 await db.execute(update(ProductAsset).where(ProductAsset.id == item.asset_id).values(status=AssetStatus.AVAILABLE))
                 
         await db.commit()
+
+    @staticmethod
+    async def request_extension(db: AsyncSession, org_id: uuid.UUID, rental_id: uuid.UUID, additional_days: int, actor: User) -> RentalExtension:
+        from datetime import timedelta
+        if additional_days <= 0:
+            raise ValueError("Additional days must be positive")
+            
+        rental = await RentalService.get_rental(db, org_id, rental_id, actor.id if actor.role.value == "CUSTOMER" else None)
+        
+        # Rental must be ACTIVE or another explicitly eligible state (e.g. PICKED_UP)
+        if rental.status not in [RentalStatus.ACTIVE, RentalStatus.PICKED_UP]:
+            from app.common.exceptions import InvalidRentalTransitionException
+            raise InvalidRentalTransitionException()
+            
+        new_end_datetime = rental.expected_return_datetime + timedelta(days=additional_days)
+        
+        # Check availability for the NEW period
+        for item in rental.items:
+            if item.asset_id:
+                # exclude_rental_id = rental.id so we don't conflict with ourselves
+                is_avail = await RentalService.is_asset_available(db, org_id, item.asset_id, rental.expected_return_datetime, new_end_datetime, exclude_rental_id=rental.id)
+                if not is_avail:
+                    from app.common.exceptions import AssetUnavailableForExtensionException
+                    raise AssetUnavailableForExtensionException(f"Asset for {item.product.name if item.product else 'Product'} is not available for the requested extension.")
+                    
+        # Calculate additional price
+        additional_amount = Decimal('0.00')
+        for item in rental.items:
+            additional_amount += item.unit_price * item.quantity * additional_days
+            
+        ext = RentalExtension(
+            rental_id=rental.id,
+            previous_end_datetime=rental.expected_return_datetime,
+            new_end_datetime=new_end_datetime,
+            additional_days=additional_days,
+            additional_amount=additional_amount,
+            requested_by=actor.id,
+            status=ExtensionStatus.APPROVED.value  # We auto-approve in demo if available
+        )
+        ext.approved_at = datetime.now(timezone.utc)
+        
+        db.add(ext)
+        
+        # Update rental
+        rental.expected_return_datetime = new_end_datetime
+        rental.total_amount += additional_amount
+        rental.subtotal += additional_amount
+        
+        await db.commit()
+        await db.refresh(ext)
+        return ext
+
+    @staticmethod
+    async def mark_no_show(db: AsyncSession, org_id: uuid.UUID, rental_id: uuid.UUID, actor: User) -> Rental:
+        # Lock the rental row
+        result = await db.execute(
+            select(Rental)
+            .options(selectinload(Rental.items))
+            .where(Rental.id == rental_id, Rental.organization_id == org_id)
+            .with_for_update()
+        )
+        rental = result.scalars().first()
+        if not rental:
+            raise RentalNotFoundException()
+            
+        # A rental can only be a no-show if it's waiting for pickup or confirmed
+        if rental.status not in [RentalStatus.CONFIRMED, RentalStatus.PAYMENT_COMPLETED, RentalStatus.READY_FOR_PICKUP]:
+            from app.common.exceptions import InvalidRentalTransitionException
+            raise InvalidRentalTransitionException(f"Cannot mark rental as NO_SHOW from {rental.status.value}")
+            
+        # Optional: check if the grace period has passed (e.g. 24h after start_datetime)
+        # For hackathon demo, we might just allow manual triggering regardless of time.
+        
+        rental.status = RentalStatus.NO_SHOW
+        rental.updated_at = datetime.now(timezone.utc)
+        
+        # Release assets
+        for item in rental.items:
+            if item.asset_id:
+                await db.execute(update(ProductAsset).where(ProductAsset.id == item.asset_id).values(status=AssetStatus.AVAILABLE))
+                
+        # Optional: Apply cancellation penalty logic here (e.g. forfeit deposit)
+        # We can create a ledger entry or adjust the final amounts.
+        # For now, we just release assets and mark NO_SHOW.
+        
+        await db.commit()
+        await db.refresh(rental)
+        return rental
