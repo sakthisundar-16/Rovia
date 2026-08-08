@@ -7,19 +7,20 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     DEMO_MODE: bool = True
     
-    # Database Settings (PostgreSQL Primary)
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "rovia"
-    POSTGRES_PASSWORD: str = "rovia_secret"
-    POSTGRES_DB: str = "rovia"
-    POSTGRES_PORT: int = 5433
+    # Database Settings (MySQL Real-Time Database)
+    MYSQL_SERVER: str = "localhost"
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DB: str = "rovia"
+    MYSQL_PORT: int = 3306
     USE_SQLITE_FALLBACK: bool = False
     
     @property
     def DATABASE_URI(self) -> str:
         if self.USE_SQLITE_FALLBACK:
             return "sqlite+aiosqlite:///./rovia.db"
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        pwd = f":{self.MYSQL_PASSWORD}" if self.MYSQL_PASSWORD else ""
+        return f"mysql+aiomysql://{self.MYSQL_USER}{pwd}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}?charset=utf8mb4"
     
     # Redis Settings
     REDIS_URL: str = "redis://localhost:6379/0"
