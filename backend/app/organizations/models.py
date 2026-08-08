@@ -1,14 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, Enum as SAEnum
+from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
 from app.common.enums import OrganizationStatus
-from app.common.types import GUID
 
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     slug = Column(String(100), unique=True, index=True, nullable=False)
     email = Column(String(255), nullable=True)

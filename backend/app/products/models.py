@@ -1,20 +1,20 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Enum as SAEnum, Numeric, Text
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Enum as SAEnum, Numeric
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.common.enums import ProductCategory
-from app.common.types import GUID
 
 class Product(Base):
     __tablename__ = "products"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
     
     name = Column(String(255), nullable=False)
     slug = Column(String(255), index=True, nullable=True)
-    description = Column(Text, nullable=True)
+    description = Column(String, nullable=True)
     category = Column(SAEnum(ProductCategory), nullable=False)
     brand = Column(String(100), nullable=True)
     
@@ -33,9 +33,9 @@ class Product(Base):
 class ProductVariant(Base):
     __tablename__ = "product_variants"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
-    product_id = Column(GUID(), ForeignKey("products.id", ondelete="CASCADE"), index=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), index=True, nullable=False)
     
     name = Column(String(255), nullable=False)
     sku = Column(String(255), index=True, nullable=True)

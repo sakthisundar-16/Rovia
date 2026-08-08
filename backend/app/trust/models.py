@@ -1,17 +1,17 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.users.models import User
-from app.common.types import GUID
 
 class CustomerTrust(Base):
     __tablename__ = "customer_trusts"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
-    customer_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True, nullable=False)
     
     score = Column(Integer, default=50, nullable=False)
     total_completed_rentals = Column(Integer, default=0, nullable=False)
@@ -26,10 +26,10 @@ class CustomerTrust(Base):
 class TrustHistory(Base):
     __tablename__ = "trust_history"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
-    customer_trust_id = Column(GUID(), ForeignKey("customer_trusts.id", ondelete="CASCADE"), index=True, nullable=False)
-    rental_id = Column(GUID(), ForeignKey("rentals.id", ondelete="SET NULL"), nullable=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    customer_trust_id = Column(UUID(as_uuid=True), ForeignKey("customer_trusts.id", ondelete="CASCADE"), index=True, nullable=False)
+    rental_id = Column(UUID(as_uuid=True), ForeignKey("rentals.id", ondelete="SET NULL"), nullable=True)
     
     old_score = Column(Integer, nullable=False)
     new_score = Column(Integer, nullable=False)

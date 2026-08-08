@@ -1,18 +1,18 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Enum as SAEnum, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.common.enums import AssetStatus, AssetCondition
-from app.common.types import GUID
 
 class ProductAsset(Base):
     __tablename__ = "product_assets"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
-    product_id = Column(GUID(), ForeignKey("products.id", ondelete="CASCADE"), index=True, nullable=False)
-    variant_id = Column(GUID(), ForeignKey("product_variants.id", ondelete="SET NULL"), index=True, nullable=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True, nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), index=True, nullable=False)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.id", ondelete="SET NULL"), index=True, nullable=True)
     
     asset_code = Column(String(100), index=True, nullable=False)
     serial_number = Column(String(255), index=True, nullable=True)
