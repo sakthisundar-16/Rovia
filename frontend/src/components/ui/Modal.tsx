@@ -63,8 +63,8 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Children Body */}
-        <div className="overflow-y-auto pr-1.5 flex-1 space-y-4">
+        {/* Scrollable Children Body with Bottom Padding */}
+        <div className="overflow-y-auto pr-2 pb-10 flex-1 space-y-4">
           {children}
         </div>
       </div>

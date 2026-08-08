@@ -32,7 +32,7 @@ export const Products: React.FC = () => {
   
   // Image Upload / Link Mode
   const [imageInputType, setImageInputType] = useState<'URL' | 'UPLOAD'>('URL');
-  const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800');
+  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
 
   const loadProducts = () => {
@@ -83,7 +83,10 @@ export const Products: React.FC = () => {
       variants: ['Standard Rental Package'],
     });
 
-    showToast('Universal Rental SKU Added!', `${name} added to live catalog & backend API.`, 'success');
+    // Update state immediately so user sees the newly created product
+    setProducts((prev) => [created, ...prev]);
+
+    showToast('Universal Rental SKU Created!', `${name} added to live catalog & inventory.`, 'success');
     setShowAddModal(false);
     
     // Reset Form
@@ -91,8 +94,7 @@ export const Products: React.FC = () => {
     setSku('');
     setBrand('');
     setDescription('');
-    setImageUrl(FALLBACK_IMAGE);
-    loadProducts();
+    setImageUrl('');
   };
 
   const columns: Column<Product>[] = [
@@ -102,7 +104,7 @@ export const Products: React.FC = () => {
       render: (r) => (
         <div className="flex items-center gap-3">
           <img
-            src={r.image}
+            src={r.image || FALLBACK_IMAGE}
             alt={r.name}
             onError={(e) => {
               (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
@@ -125,7 +127,7 @@ export const Products: React.FC = () => {
       header: 'Actions',
       render: (r) => (
         <Button size="sm" variant="outline" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={() => showToast('Edit Product', `Editing ${r.name}`, 'info')}>
-          Edit
+          Edit SKU
         </Button>
       ),
     },
@@ -153,7 +155,7 @@ export const Products: React.FC = () => {
             activeTab === 'Catalog' ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-sm' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
           }`}
         >
-          Product Catalog
+          Product Catalog ({products.length})
         </button>
         <button
           onClick={() => setActiveTab('Pricelists')}
@@ -186,10 +188,10 @@ export const Products: React.FC = () => {
 
       {/* Add Product Modal Form */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Universal Product SKU" maxWidth="lg">
-        <form onSubmit={handleCreateProduct} className="space-y-4 text-xs">
+        <form onSubmit={handleCreateProduct} className="space-y-4 text-xs pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input label="Product Name" placeholder="e.g. Caterpillar CAT 305 Excavator" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input label="SKU Code" placeholder="e.g. CAT-305-EXCAV" value={sku} onChange={(e) => setSku(e.target.value)} />
+            <Input label="Product Name *" placeholder="e.g. Caterpillar CAT 305 Excavator" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input label="SKU Code *" placeholder="e.g. CAT-305-EXCAV" value={sku} onChange={(e) => setSku(e.target.value)} required />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -222,7 +224,7 @@ export const Products: React.FC = () => {
           {/* Product Image Selection Mode: Direct Upload vs Link URL */}
           <div className="space-y-2 border-t border-[#988686]/20 pt-3">
             <label className="font-semibold text-[#5C4E4E] dark:text-[#B5A9A9] uppercase block">
-              Product Image Attachment
+              Product Image Attachment (Link URL or File Upload)
             </label>
             <div className="flex items-center gap-2 p-1 rounded-xl bg-[#988686]/15 max-w-xs">
               <button
@@ -247,8 +249,8 @@ export const Products: React.FC = () => {
 
             {imageInputType === 'URL' ? (
               <Input
-                label="Image URL Address"
-                placeholder="https://images.unsplash.com/..."
+                label="Paste Any Image Web Address (URL)"
+                placeholder="https://images.unsplash.com/... or https://..."
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
               />
@@ -260,7 +262,7 @@ export const Products: React.FC = () => {
             <div className="mt-2 p-3 rounded-xl glass-panel border border-[#988686]/30 flex items-center gap-4">
               <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-[#988686]/40">
                 <img
-                  src={imageUrl}
+                  src={imageUrl || FALLBACK_IMAGE}
                   alt="Product Preview"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
@@ -270,17 +272,19 @@ export const Products: React.FC = () => {
               </div>
               <div className="text-xs">
                 <span className="font-bold text-[#000000] dark:text-white block">Image Live Preview</span>
-                <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{imageUrl}</p>
-                <span className="text-[10px] text-[#5E7A63] font-semibold mt-0.5 block">✓ Verified preview status</span>
+                <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{imageUrl || 'Default Fallback Image'}</p>
+                <span className="text-[10px] text-[#5E7A63] font-semibold mt-0.5 block">✓ Image ready for catalog</span>
               </div>
             </div>
           </div>
 
           <Input label="Short Description" placeholder="Key specs and rental features..." value={description} onChange={(e) => setDescription(e.target.value)} />
 
-          <Button type="submit" className="w-full mt-2" leftIcon={<CheckCircle2 className="w-4 h-4" />}>
-            Save & Publish to Live Catalog
-          </Button>
+          <div className="pt-4 border-t border-[#988686]/30">
+            <Button type="submit" className="w-full py-3" leftIcon={<CheckCircle2 className="w-4 h-4" />}>
+              Save & Publish to Live Catalog
+            </Button>
+          </div>
         </form>
       </Modal>
     </div>
