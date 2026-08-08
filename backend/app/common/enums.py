@@ -1,0 +1,90 @@
+import enum
+
+class UserRole(str, enum.Enum):
+    ADMIN = "ADMIN"
+    OPERATIONS = "OPERATIONS"
+    CUSTOMER = "CUSTOMER"
+
+class OrganizationStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    SUSPENDED = "SUSPENDED"
+
+class CustomerStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    BLACKLISTED = "BLACKLISTED"
+
+class ProductCategory(str, enum.Enum):
+    CAMERA = "CAMERA"
+    PROJECTOR = "PROJECTOR"
+    AUDIO = "AUDIO"
+    GENERATOR = "GENERATOR"
+    LAPTOP = "LAPTOP"
+
+class AssetStatus(str, enum.Enum):
+    AVAILABLE = "AVAILABLE"
+    RESERVED = "RESERVED"
+    READY_FOR_PICKUP = "READY_FOR_PICKUP"
+    ACTIVE = "ACTIVE"
+    RETURN_INSPECTION = "RETURN_INSPECTION"
+    MAINTENANCE = "MAINTENANCE"
+    RETIRED = "RETIRED"
+
+class AssetCondition(str, enum.Enum):
+    EXCELLENT = "EXCELLENT"
+    GOOD = "GOOD"
+    FAIR = "FAIR"
+    DAMAGED = "DAMAGED"
+    CRITICAL = "CRITICAL"
+
+class RentalStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    QUOTED = "QUOTED"
+    CONFIRMED = "CONFIRMED"
+    PAYMENT_PENDING = "PAYMENT_PENDING"
+    PAYMENT_COMPLETED = "PAYMENT_COMPLETED"
+    READY_FOR_PICKUP = "READY_FOR_PICKUP"
+    PICKED_UP = "PICKED_UP"
+    ACTIVE = "ACTIVE"
+    RETURN_DUE = "RETURN_DUE"
+    OVERDUE = "OVERDUE"
+    RETURNED = "RETURNED"
+    INSPECTION = "INSPECTION"
+    SETTLEMENT = "SETTLEMENT"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+class PickupMethod(str, enum.Enum):
+    IN_STORE = "IN_STORE"
+    DELIVERY = "DELIVERY"
+
+class PaymentType(str, enum.Enum):
+    RENTAL = "RENTAL"
+    DEPOSIT = "DEPOSIT"
+    REFUND = "REFUND"
+
+class PaymentStatus(str, enum.Enum):
+    INITIATED = "INITIATED"
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
+
+class DepositStatus(str, enum.Enum):
+    REQUIRED = "REQUIRED"
+    PENDING = "PENDING"
+    HELD = "HELD"
+    PARTIALLY_DEDUCTED = "PARTIALLY_DEDUCTED"
+    REFUND_PENDING = "REFUND_PENDING"
+    REFUNDED = "REFUNDED"
+    SETTLED = "SETTLED"
+
+class LedgerEntryType(str, enum.Enum):
+    DEPOSIT_COLLECTED = "DEPOSIT_COLLECTED"
+    LATE_FEE_DEDUCTION = "LATE_FEE_DEDUCTION"
+    DAMAGE_DEDUCTION = "DAMAGE_DEDUCTION"
+    MISSING_ITEM_DEDUCTION = "MISSING_ITEM_DEDUCTION"
+    OTHER_DEDUCTION = "OTHER_DEDUCTION"
+    REFUND = "REFUND"
+    ADJUSTMENT = "ADJUSTMENT"
