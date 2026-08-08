@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Elegant Bloom';
+  src: url('/fonts/ElegantBloom.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --color-ink: #000000;
+    --color-mist: #D1D0D0;
+    --color-mauve: #988686;
+    --color-plum: #5C4E4E;
+
+    --surface-0: #FFFFFF;
+    --surface-1: #F7F6F6;
+    --surface-2: #EDEBEB;
+    --text-primary: #000000;
+    --text-secondary: #5C4E4E;
+    --border-subtle: rgba(209, 208, 208, 0.6);
+  }
+
+  .dark {
+    --surface-0: #0D0B0B;
+    --surface-1: #161313;
+    --surface-2: #211D1D;
+    --text-primary: #F5F3F3;
+    --text-secondary: #B5A9A9;
+    --border-subtle: rgba(92, 78, 78, 0.35);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background-color: var(--surface-1);
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: 'Elegant Bloom', 'Fraunces', serif;
+  }
+}
+
+/* Glassmorphism System */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(209, 208, 208, 0.5);
+}
+
+.dark .glass-panel {
+  background: rgba(22, 19, 19, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(152, 134, 134, 0.2);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px 0 rgba(92, 78, 78, 0.08);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-card {
+  background: rgba(26, 22, 22, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(152, 134, 134, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(152, 134, 134, 0.4);
+  box-shadow: 0 12px 40px 0 rgba(152, 134, 134, 0.15);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(209, 208, 208, 0.5);
+}
+
+.dark .glass-nav {
+  background: rgba(13, 11, 11, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(92, 78, 78, 0.3);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(209, 208, 208, 0.7);
+}
+
+.dark .glass-input {
+  background: rgba(33, 29, 29, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(92, 78, 78, 0.4);
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: #988686;
+  box-shadow: 0 0 0 2px rgba(152, 134, 134, 0.3);
+}
+
+/* Tabular Numerals for prices & metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth Transitions Engine */
+.page-transition {
+  animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(152, 134, 134, 0.4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(152, 134, 134, 0.7);
+}
