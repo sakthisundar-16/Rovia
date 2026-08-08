@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2, Upload, Link as LinkIcon, Image as ImageIcon, Save } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -29,11 +29,21 @@ export const Products: React.FC = () => {
   const [dailyRate, setDailyRate] = useState(5000);
   const [securityDeposit, setSecurityDeposit] = useState(25000);
   const [stock, setStock] = useState(3);
-  
-  // Image Upload / Link Mode
   const [imageInputType, setImageInputType] = useState<'URL' | 'UPLOAD'>('URL');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+
+  // Edit Product Modal Form State
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editSku, setEditSku] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editBrand, setEditBrand] = useState('');
+  const [editDailyRate, setEditDailyRate] = useState(0);
+  const [editSecurityDeposit, setEditSecurityDeposit] = useState(0);
+  const [editStock, setEditStock] = useState(1);
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editDescription, setEditDescription] = useState('');
 
   const loadProducts = () => {
     api.getProducts().then((data) => setProducts(data));
@@ -43,11 +53,15 @@ export const Products: React.FC = () => {
     loadProducts();
   }, []);
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = (file: File, isEditMode = false) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (reader.result) {
-        setImageUrl(reader.result as string);
+        if (isEditMode) {
+          setEditImageUrl(reader.result as string);
+        } else {
+          setImageUrl(reader.result as string);
+        }
         showToast('Image Loaded Successfully', 'File converted to base64 preview format.', 'success');
       }
     };
@@ -83,9 +97,7 @@ export const Products: React.FC = () => {
       variants: ['Standard Rental Package'],
     });
 
-    // Update state immediately so user sees the newly created product
     setProducts((prev) => [created, ...prev]);
-
     showToast('Universal Rental SKU Created!', `${name} added to live catalog & inventory.`, 'success');
     setShowAddModal(false);
     
@@ -95,6 +107,44 @@ export const Products: React.FC = () => {
     setBrand('');
     setDescription('');
     setImageUrl('');
+  };
+
+  const handleOpenEditModal = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
+    setEditingProduct(product);
+    setEditName(product.name);
+    setEditSku(product.sku);
+    setEditCategory(product.category);
+    setEditBrand(product.brand);
+    setEditDailyRate(product.dailyRate);
+    setEditSecurityDeposit(product.securityDeposit);
+    setEditStock(product.stock);
+    setEditImageUrl(product.image);
+    setEditDescription(product.description);
+  };
+
+  const handleSaveEditProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    const updated: Product = {
+      ...editingProduct,
+      name: editName,
+      sku: editSku,
+      category: editCategory,
+      brand: editBrand,
+      dailyRate: Number(editDailyRate),
+      securityDeposit: Number(editSecurityDeposit),
+      stock: Number(editStock),
+      available: Number(editStock),
+      image: editImageUrl.trim() || FALLBACK_IMAGE,
+      gallery: [editImageUrl.trim() || FALLBACK_IMAGE],
+      description: editDescription,
+    };
+
+    setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updated : p)));
+    showToast('Product SKU Updated!', `${editName} changes saved successfully.`, 'success');
+    setEditingProduct(null);
   };
 
   const columns: Column<Product>[] = [
@@ -126,7 +176,7 @@ export const Products: React.FC = () => {
       key: 'actions',
       header: 'Actions',
       render: (r) => (
-        <Button size="sm" variant="outline" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={() => showToast('Edit Product', `Editing ${r.name}`, 'info')}>
+        <Button size="sm" variant="outline" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={(e) => handleOpenEditModal(e, r)}>
           Edit SKU
         </Button>
       ),
@@ -255,7 +305,7 @@ export const Products: React.FC = () => {
                 onChange={(e) => setImageUrl(e.target.value)}
               />
             ) : (
-              <FileUpload label="Select Image File from Computer" onFileSelect={handleFileUpload} />
+              <FileUpload label="Select Image File from Computer" onFileSelect={(file) => handleFileUpload(file, false)} />
             )}
 
             {/* Live Image Preview Box */}
@@ -286,6 +336,79 @@ export const Products: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit Product Modal Form */}
+      <Modal isOpen={!!editingProduct} onClose={() => setEditingProduct(null)} title={`Edit Product SKU: ${editingProduct?.sku}`} maxWidth="lg">
+        {editingProduct && (
+          <form onSubmit={handleSaveEditProduct} className="space-y-4 text-xs pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Product Name *" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+              <Input label="SKU Code *" value={editSku} onChange={(e) => setEditSku(e.target.value)} required />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-[#5C4E4E] dark:text-[#B5A9A9] uppercase">Category</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="glass-input rounded p-2 text-xs font-semibold text-[#000000] dark:text-white"
+                >
+                  <option value="Heavy Machinery">Heavy Machinery</option>
+                  <option value="Designer Fashion">Designer Fashion</option>
+                  <option value="Vehicles & Mobility">Vehicles & Mobility</option>
+                  <option value="Electronics & Tech">Electronics & Tech</option>
+                  <option value="Medical Equipment">Medical Equipment</option>
+                  <option value="Outdoor & Camping">Outdoor & Camping</option>
+                  <option value="Cameras & Lenses">Cameras & Lenses</option>
+                  <option value="Event Supplies">Event Supplies</option>
+                </select>
+              </div>
+              <Input label="Manufacturer / Brand" value={editBrand} onChange={(e) => setEditBrand(e.target.value)} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input label="Daily Rate (₹)" type="number" value={editDailyRate} onChange={(e) => setEditDailyRate(Number(e.target.value))} />
+              <Input label="Security Deposit (₹)" type="number" value={editSecurityDeposit} onChange={(e) => setEditSecurityDeposit(Number(e.target.value))} />
+              <Input label="Stock Units" type="number" value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} />
+            </div>
+
+            <div className="space-y-2 border-t border-[#988686]/20 pt-3">
+              <Input
+                label="Image URL Address"
+                value={editImageUrl}
+                onChange={(e) => setEditImageUrl(e.target.value)}
+              />
+              <FileUpload label="Or Upload New Image File" onFileSelect={(file) => handleFileUpload(file, true)} />
+
+              <div className="mt-2 p-3 rounded-xl glass-panel border border-[#988686]/30 flex items-center gap-4">
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-[#988686]/40">
+                  <img
+                    src={editImageUrl || FALLBACK_IMAGE}
+                    alt="Edit Preview"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-xs">
+                  <span className="font-bold text-[#000000] dark:text-white block">Image Preview</span>
+                  <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{editImageUrl}</p>
+                </div>
+              </div>
+            </div>
+
+            <Input label="Short Description" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+
+            <div className="pt-4 border-t border-[#988686]/30">
+              <Button type="submit" className="w-full py-3" leftIcon={<Save className="w-4 h-4" />}>
+                Save Product Changes
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );
