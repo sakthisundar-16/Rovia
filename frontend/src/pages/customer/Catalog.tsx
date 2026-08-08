@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, SlidersHorizontal, ShoppingBag, Plus } from 'lucide-react';
+import { Search, Filter, Calendar, SlidersHorizontal, ShoppingBag, Building } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Product } from '../../services/mockData';
+import { Product, RenterVendor } from '../../services/mockData';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
@@ -15,9 +15,11 @@ interface CatalogProps {
 
 export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [renters, setRenters] = useState<RenterVendor[]>([]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedBrand, setSelectedBrand] = useState('All');
+  const [selectedRenter, setSelectedRenter] = useState('All');
   const [priceMax, setPriceMax] = useState(100000);
   const [startDate, setStartDate] = useState('2026-08-10');
   const [endDate, setEndDate] = useState('2026-08-13');
@@ -28,6 +30,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     api.getProducts().then((data) => setProducts(data));
+    api.getRenters().then((data) => setRenters(data));
   }, []);
 
   const categories = [
@@ -42,19 +45,18 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
     'Event Supplies',
   ];
 
-  const brands = ['All', 'Hasselblad', 'Caterpillar', 'Vera Wang', 'Tesla', 'Philips Respironics', 'Apple', 'MSR Mountaineering', 'ROVIA Atelier'];
-
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.renterName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-    const matchesBrand = selectedBrand === 'All' || product.brand === selectedBrand;
+    const matchesRenter = selectedRenter === 'All' || product.renterId === selectedRenter || product.renterName === selectedRenter;
     const matchesPrice = product.dailyRate <= priceMax;
 
-    return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
+    return matchesSearch && matchesCategory && matchesRenter && matchesPrice;
   });
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
@@ -71,24 +73,23 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
       endDate,
       quantity: 1,
     });
-    showToast('Added to Rental Bag', `${product.name} booked for selected dates`, 'success');
+    showToast('Added to Rental Bag', `${product.name} booked from ${product.renterName}`, 'success');
   };
 
   return (
     <div className="w-full space-y-8 page-transition pb-16">
-      {/* Catalog Title */}
+      {/* Catalog Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#D1D0D0]/40 dark:border-[#5C4E4E]/40 pb-4">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-[#988686]">UNIVERSAL RENTAL PLATFORM</span>
+          <span className="text-xs font-mono uppercase tracking-widest text-[#988686]">MULTI-VENDOR RENTAL MARKETPLACE</span>
           <h1 className="font-heading text-4xl font-bold text-[#000000] dark:text-white mt-1">
-            Universal Product Rental Catalog
+            Browse Rentals Across Independent Sellers
           </h1>
         </div>
 
-        {/* Search & Toggle Filters Button */}
         <div className="flex items-center gap-3">
           <Input
-            placeholder="Search cameras, vehicles, machinery, gowns..."
+            placeholder="Search products, cameras, excavators, sellers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
@@ -140,8 +141,28 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
         {/* Left Filters Sidebar */}
         {showFilters && (
           <aside className="lg:col-span-3 space-y-6 glass-panel p-5 rounded-2xl border border-[#988686]/30 h-fit animate-fadeIn">
-            {/* Category Filter */}
+            {/* Filter by Renter / Seller */}
             <div className="space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-[#988686]" />
+                Filter by Renter (Seller)
+              </h3>
+              <select
+                value={selectedRenter}
+                onChange={(e) => setSelectedRenter(e.target.value)}
+                className="w-full glass-input text-xs p-2 rounded-lg text-[#000000] dark:text-white font-semibold"
+              >
+                <option value="All">All Marketplace Renters</option>
+                {renters.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.rating}★)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div className="space-y-2 border-t border-[#D1D0D0]/30 dark:border-[#5C4E4E]/30 pt-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9]">
                 Rental Category
               </h3>
@@ -157,28 +178,6 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                     }`}
                   >
                     {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Brand Filter */}
-            <div className="space-y-2 border-t border-[#D1D0D0]/30 dark:border-[#5C4E4E]/30 pt-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9]">
-                Brand / Manufacturer
-              </h3>
-              <div className="flex flex-col gap-1">
-                {brands.map((brand) => (
-                  <button
-                    key={brand}
-                    onClick={() => setSelectedBrand(brand)}
-                    className={`text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      selectedBrand === brand
-                        ? 'bg-[#988686] text-white font-bold'
-                        : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10'
-                    }`}
-                  >
-                    {brand}
                   </button>
                 ))}
               </div>
@@ -210,8 +209,8 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
           {filteredProducts.length === 0 ? (
             <div className="glass-panel p-12 rounded-2xl text-center space-y-3">
               <p className="text-base font-bold text-[#000000] dark:text-white">No rental products match your filters</p>
-              <p className="text-xs text-[#988686]">Try resetting category or price range filters.</p>
-              <Button variant="outline" size="sm" onClick={() => { setSelectedCategory('All'); setSelectedBrand('All'); setPriceMax(100000); setSearchQuery(''); }}>
+              <p className="text-xs text-[#988686]">Try resetting category, renter vendor, or price range filters.</p>
+              <Button variant="outline" size="sm" onClick={() => { setSelectedCategory('All'); setSelectedRenter('All'); setPriceMax(100000); setSearchQuery(''); }}>
                 Reset Filters
               </Button>
             </div>
@@ -238,9 +237,10 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-mono text-[#988686] uppercase tracking-wider block">
-                        {product.category} • {product.sku}
-                      </span>
+                      <div className="flex items-center gap-1 text-[10px] font-mono text-[#988686] uppercase tracking-wider block">
+                        <Building className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{product.renterName}</span>
+                      </div>
                       <h3 className="font-heading text-base font-bold text-[#000000] dark:text-white line-clamp-1 mt-0.5">
                         {product.name}
                       </h3>

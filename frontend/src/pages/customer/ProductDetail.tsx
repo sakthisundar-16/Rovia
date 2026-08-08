@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ShoppingBag, ArrowLeft, Check, Star, Info, FileText } from 'lucide-react';
+import { ShieldCheck, ShoppingBag, ArrowLeft, Check, Star, Info, Building, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -21,6 +21,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
   const [startDate, setStartDate] = useState('2026-08-10');
   const [endDate, setEndDate] = useState('2026-08-13');
   const [quantity, setQuantity] = useState(1);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'Delivery' | 'Store Pickup'>('Delivery');
 
   const { addItem } = useCart();
   const { showToast } = useToast();
@@ -47,7 +48,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
       endDate,
       quantity,
     });
-    showToast('Added to Rental Cart', `${product.name} booked for ${days} days`, 'success');
+    showToast('Added to Rental Cart', `${product.name} booked from ${product.renterName}`, 'success');
   };
 
   const handleRentNow = () => {
@@ -67,8 +68,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
 
       {/* Main Grid: Gallery Left, Sticky Booking Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Image Gallery */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* Left Column: Image Gallery & Seller Card */}
+        <div className="lg:col-span-7 space-y-6">
           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-panel border border-[#988686]/30 shadow-2xl">
             <img
               src={product.gallery[activeImageIndex] || product.image}
@@ -98,12 +99,31 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
               ))}
             </div>
           )}
+
+          {/* Renter Seller Badge Card */}
+          <div className="glass-panel p-5 rounded-2xl border border-[#988686]/30 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-[#988686]/20 text-[#988686]">
+                <Building className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-mono text-[#988686]">MARKETPLACE SELLER / VENDOR</span>
+                <h4 className="font-bold text-base text-[#000000] dark:text-white">{product.renterName}</h4>
+                <p className="text-xs text-[#5C4E4E] dark:text-[#B5A9A9] flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 text-[#988686]" /> Store Pickup Location: Mumbai HQ Atelier
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <Badge variant="success">Verified Seller</Badge>
+              <div className="text-xs font-mono font-bold text-[#B08A4E] mt-1">4.9 ★ Rating</div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Sticky Booking Panel */}
         <div className="lg:col-span-5 space-y-6">
           <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[#988686]/30 shadow-2xl space-y-6 sticky top-24">
-            {/* Title & SKU */}
             <div>
               <span className="text-xs font-mono uppercase text-[#988686] tracking-widest">{product.category} • SKU: {product.sku}</span>
               <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#000000] dark:text-white mt-1">
@@ -114,7 +134,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                   <Star className="w-4 h-4 fill-current" />
                   <span className="text-xs font-bold ml-1">{product.rating}</span>
                 </div>
-                <span className="text-xs text-[#988686]">• 100% On-Time Return Guarantee</span>
+                <span className="text-xs text-[#988686]">• 100% On-Time Return Deposit Protection</span>
               </div>
             </div>
 
@@ -142,6 +162,37 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
               </div>
             )}
 
+            {/* Fulfillment Selector: Delivery vs Store Pickup */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9]">
+                Fulfillment Mode
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentMethod('Delivery')}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                    fulfillmentMethod === 'Delivery'
+                      ? 'bg-[#988686] text-white border-[#988686] shadow-warm-sm'
+                      : 'glass-panel text-[#5C4E4E] dark:text-[#B5A9A9] border-[#D1D0D0]/50 dark:border-[#5C4E4E]/30'
+                  }`}
+                >
+                  🚚 Courier Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentMethod('Store Pickup')}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                    fulfillmentMethod === 'Store Pickup'
+                      ? 'bg-[#988686] text-white border-[#988686] shadow-warm-sm'
+                      : 'glass-panel text-[#5C4E4E] dark:text-[#B5A9A9] border-[#D1D0D0]/50 dark:border-[#5C4E4E]/30'
+                  }`}
+                >
+                  🏬 Store Pickup
+                </button>
+              </div>
+            </div>
+
             {/* Rental Window Picker Component */}
             <DateRangePicker
               startDate={startDate}
@@ -164,7 +215,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 <span className="font-mono font-bold">₹{depositTotal.toLocaleString()}</span>
               </div>
               <p className="text-[10px] text-[#5E7A63] font-medium pt-1 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Deposit is 100% refunded to payment source upon on-time return inspection.
+                <ShieldCheck className="w-3.5 h-3.5" /> Deposit is 100% refunded upon on-time return inspection.
               </p>
             </div>
 
@@ -197,33 +248,6 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                   Rent Now
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Below the Fold: Specs & Care Policy */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 border-t border-[#D1D0D0]/40 dark:border-[#5C4E4E]/40 pt-10">
-        <div className="lg:col-span-7 space-y-6">
-          <h3 className="font-heading text-2xl font-bold text-[#000000] dark:text-white">Technical Specifications</h3>
-          <div className="glass-panel rounded-2xl border border-[#988686]/30 overflow-hidden divide-y divide-[#D1D0D0]/30 dark:divide-[#5C4E4E]/30 text-xs">
-            {Object.entries(product.specs).map(([specKey, specVal]) => (
-              <div key={specKey} className="flex justify-between p-3.5">
-                <span className="font-semibold text-[#5C4E4E] dark:text-[#B5A9A9] uppercase tracking-wider">{specKey}</span>
-                <span className="font-mono text-[#000000] dark:text-white">{String(specVal)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="lg:col-span-5 space-y-6">
-          <h3 className="font-heading text-2xl font-bold text-[#000000] dark:text-white">Care & Damage Protection Policy</h3>
-          <div className="glass-panel p-6 rounded-2xl border border-[#988686]/30 space-y-3 text-xs text-[#5C4E4E] dark:text-[#B5A9A9]">
-            <p className="leading-relaxed">
-              All ROVIA rental items are inspected and dispatched inside protective flight cases or custom packaging. Customers must verify item condition within 2 hours of receipt.
-            </p>
-            <div className="p-3 rounded-xl bg-[#B08A4E]/15 border border-[#B08A4E]/30 text-[#B08A4E] font-medium">
-              ⚠️ Normal operational wear is covered. Damage or missing parts incur partial deposit deduction per inspection terms.
             </div>
           </div>
         </div>

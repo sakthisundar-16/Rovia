@@ -1,5 +1,45 @@
+export interface RenterVendor {
+  id: string;
+  name: string;
+  logo: string;
+  rating: number;
+  totalProducts: number;
+  totalOrders: number;
+  commissionRate: number; // e.g. 10% platform commission
+  kycStatus: 'Approved' | 'Pending Approval' | 'Suspended';
+  storeLocation: string;
+  phone: string;
+  email: string;
+  joinedDate: string;
+}
+
+export interface RenterPayout {
+  id: string;
+  renterId: string;
+  renterName: string;
+  period: string;
+  grossRentalRevenue: number;
+  platformCommission: number;
+  netPayout: number;
+  status: 'Paid' | 'Processing' | 'Pending';
+  payoutDate: string;
+}
+
+export interface MarketplaceDispute {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  renterName: string;
+  issueType: 'Damage Claim' | 'Late Fee Penalty Dispute' | 'Non-Delivery';
+  claimedAmount: number;
+  status: 'Open' | 'Resolved' | 'Under Admin Review';
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
+  renterId: string;
+  renterName: string;
   sku: string;
   name: string;
   category: string;
@@ -26,6 +66,8 @@ export interface OrderTimeline {
 
 export interface Order {
   id: string;
+  renterId: string;
+  renterName: string;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -55,6 +97,7 @@ export interface Order {
 
 export interface DepositLedger {
   id: string;
+  renterId: string;
   orderId: string;
   orderNumber: string;
   customerName: string;
@@ -70,6 +113,7 @@ export interface DepositLedger {
 
 export interface InspectionItem {
   id: string;
+  renterId: string;
   orderNumber: string;
   customerName: string;
   productName: string;
@@ -86,6 +130,7 @@ export interface InspectionItem {
 
 export interface Quotation {
   id: string;
+  renterId: string;
   quoteNumber: string;
   customerName: string;
   customerEmail: string;
@@ -99,9 +144,119 @@ export interface Quotation {
   total: number;
 }
 
+export const MARKETPLACE_RENTERS: RenterVendor[] = [
+  {
+    id: 'rnt-101',
+    name: 'ROVIA Atelier & Cinema Rigs',
+    logo: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=400',
+    rating: 4.95,
+    totalProducts: 14,
+    totalOrders: 182,
+    commissionRate: 10,
+    kycStatus: 'Approved',
+    storeLocation: 'Suite 402, Lower Parel, Mumbai',
+    phone: '+91 98201 11223',
+    email: 'ops@rovia-atelier.com',
+    joinedDate: '2025-11-10'
+  },
+  {
+    id: 'rnt-102',
+    name: 'Urban Gear Rentals & Heavy Tech',
+    logo: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=400',
+    rating: 4.88,
+    totalProducts: 22,
+    totalOrders: 240,
+    commissionRate: 10,
+    kycStatus: 'Approved',
+    storeLocation: 'MIDC Industrial Zone, Goregaon East, Mumbai',
+    phone: '+91 98300 22110',
+    email: 'contact@urbangear-rentals.in',
+    joinedDate: '2026-01-15'
+  },
+  {
+    id: 'rnt-103',
+    name: 'Haute Couture & Event Props Co.',
+    logo: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&q=80&w=400',
+    rating: 5.0,
+    totalProducts: 9,
+    totalOrders: 95,
+    commissionRate: 12,
+    kycStatus: 'Approved',
+    storeLocation: 'Bandra West Fashion District, Mumbai',
+    phone: '+91 98444 33221',
+    email: 'rentals@haute-props.in',
+    joinedDate: '2026-02-01'
+  },
+  {
+    id: 'rnt-104',
+    name: 'Apex Machinery & Mobility Fleet',
+    logo: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=400',
+    rating: 4.75,
+    totalProducts: 6,
+    totalOrders: 42,
+    commissionRate: 10,
+    kycStatus: 'Pending Approval',
+    storeLocation: 'Thane Transport Hub, Mumbai',
+    phone: '+91 98990 77665',
+    email: 'dispatch@apex-mobility.com',
+    joinedDate: '2026-08-02'
+  }
+];
+
+export const MARKETPLACE_PAYOUTS: RenterPayout[] = [
+  {
+    id: 'pay-701',
+    renterId: 'rnt-101',
+    renterName: 'ROVIA Atelier & Cinema Rigs',
+    period: 'July 2026',
+    grossRentalRevenue: 450000,
+    platformCommission: 45000,
+    netPayout: 405000,
+    status: 'Paid',
+    payoutDate: '2026-08-01'
+  },
+  {
+    id: 'pay-702',
+    renterId: 'rnt-102',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
+    period: 'July 2026',
+    grossRentalRevenue: 680000,
+    platformCommission: 68000,
+    netPayout: 612000,
+    status: 'Paid',
+    payoutDate: '2026-08-01'
+  },
+  {
+    id: 'pay-703',
+    renterId: 'rnt-103',
+    renterName: 'Haute Couture & Event Props Co.',
+    period: 'August 1-7, 2026',
+    grossRentalRevenue: 185000,
+    platformCommission: 22200,
+    netPayout: 162800,
+    status: 'Processing',
+    payoutDate: '2026-08-10'
+  }
+];
+
+export const MARKETPLACE_DISPUTES: MarketplaceDispute[] = [
+  {
+    id: 'disp-801',
+    orderNumber: 'ROV-2026-879',
+    customerName: 'Karan Mehta',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
+    issueType: 'Late Fee Penalty Dispute',
+    claimedAmount: 45000,
+    status: 'Under Admin Review',
+    createdAt: '2026-08-06 11:20'
+  }
+];
+
 export const UNIVERSAL_PRODUCTS: Product[] = [
   {
     id: 'prod-1',
+    renterId: 'rnt-101',
+    renterName: 'ROVIA Atelier & Cinema Rigs',
     sku: 'HAS-X2D-100',
     name: 'Hasselblad X2D 100C Medium Format Camera',
     category: 'Cameras & Lenses',
@@ -127,6 +282,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-2',
+    renterId: 'rnt-102',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
     sku: 'CAT-305-EXCAV',
     name: 'Caterpillar CAT 305.5 Mini Hydraulic Excavator',
     category: 'Heavy Machinery',
@@ -151,6 +308,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-3',
+    renterId: 'rnt-103',
+    renterName: 'Haute Couture & Event Props Co.',
     sku: 'VERA-WANG-GOWN',
     name: 'Vera Wang Haute Couture Evening Gown & Silk Cape',
     category: 'Designer Fashion',
@@ -175,6 +334,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-4',
+    renterId: 'rnt-104',
+    renterName: 'Apex Machinery & Mobility Fleet',
     sku: 'TESLA-CYBERTRUCK',
     name: 'Tesla Cybertruck Dual-Motor AWD Utility Rig',
     category: 'Vehicles & Mobility',
@@ -199,6 +360,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-5',
+    renterId: 'rnt-102',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
     sku: 'PHILIPS-OXY-RESP',
     name: 'Philips SimplyGo Portable Oxygen Concentrator',
     category: 'Medical Equipment',
@@ -223,6 +386,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-6',
+    renterId: 'rnt-101',
+    renterName: 'ROVIA Atelier & Cinema Rigs',
     sku: 'MACBOOK-M3-MAX',
     name: 'Apple MacBook Pro 16" M3 Max 128GB Workstation',
     category: 'Electronics & Tech',
@@ -247,6 +412,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-7',
+    renterId: 'rnt-102',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
     sku: 'MSR-CAMP-TENT',
     name: 'MSR Expedition 4-Season Geodesic Camping Rig',
     category: 'Outdoor & Camping',
@@ -271,6 +438,8 @@ export const UNIVERSAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-8',
+    renterId: 'rnt-103',
+    renterName: 'Haute Couture & Event Props Co.',
     sku: 'LUX-CHAIR-NOIR',
     name: 'Gothic Noir Editorial Lounge Armchair & Velvet Set',
     category: 'Event Supplies',
@@ -299,6 +468,8 @@ export const INITIAL_PRODUCTS = UNIVERSAL_PRODUCTS;
 export const INITIAL_ORDERS: Order[] = [
   {
     id: 'ord-1001',
+    renterId: 'rnt-101',
+    renterName: 'ROVIA Atelier & Cinema Rigs',
     orderNumber: 'ROV-2026-881',
     customerName: 'Elena Vance',
     customerEmail: 'elena.vance@studio-noir.com',
@@ -330,6 +501,8 @@ export const INITIAL_ORDERS: Order[] = [
   },
   {
     id: 'ord-1002',
+    renterId: 'rnt-102',
+    renterName: 'Urban Gear Rentals & Heavy Tech',
     orderNumber: 'ROV-2026-879',
     customerName: 'Karan Mehta',
     customerEmail: 'karan@mumbai-cinematics.in',
@@ -366,6 +539,7 @@ export const INITIAL_ORDERS: Order[] = [
 export const INITIAL_DEPOSITS: DepositLedger[] = [
   {
     id: 'dep-901',
+    renterId: 'rnt-101',
     orderId: 'ord-1001',
     orderNumber: 'ROV-2026-881',
     customerName: 'Elena Vance',
@@ -379,6 +553,7 @@ export const INITIAL_DEPOSITS: DepositLedger[] = [
   },
   {
     id: 'dep-902',
+    renterId: 'rnt-102',
     orderId: 'ord-1002',
     orderNumber: 'ROV-2026-879',
     customerName: 'Karan Mehta',
@@ -396,6 +571,7 @@ export const INITIAL_DEPOSITS: DepositLedger[] = [
 export const INITIAL_INSPECTIONS: InspectionItem[] = [
   {
     id: 'insp-501',
+    renterId: 'rnt-101',
     orderNumber: 'ROV-2026-881',
     customerName: 'Elena Vance',
     productName: 'Hasselblad X2D 100C',
@@ -415,6 +591,7 @@ export const INITIAL_INSPECTIONS: InspectionItem[] = [
 export const INITIAL_QUOTATIONS: Quotation[] = [
   {
     id: 'q-201',
+    renterId: 'rnt-101',
     quoteNumber: 'Q-2026-044',
     customerName: 'Studio Noir Atelier',
     customerEmail: 'elena.vance@studio-noir.com',

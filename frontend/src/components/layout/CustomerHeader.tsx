@@ -1,8 +1,7 @@
 import React from 'react';
-import { ShoppingBag, User, Sparkles, Shield, Menu, X } from 'lucide-react';
+import { ShoppingBag, User, LogIn, Shield, Menu, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { ThemeToggle } from '../common/ThemeToggle';
 
 interface CustomerHeaderProps {
   currentTab: string;
@@ -68,8 +67,6 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
 
         {/* Actions & Switch Mode */}
         <div className="hidden md:flex items-center gap-4">
-          <ThemeToggle />
-
           {/* Cart Icon */}
           <button
             onClick={() => onNavigate('cart')}
@@ -82,6 +79,16 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
                 {cartCount}
               </span>
             )}
+          </button>
+
+          {/* Sign In */}
+          <button
+            onClick={() => onNavigate('auth')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] hover:bg-[#3D3333] text-white text-xs font-semibold shadow-warm-sm transition-all"
+            title="Sign in as Customer, Renter or Admin"
+          >
+            <LogIn className="w-3.5 h-3.5 text-[#988686]" />
+            <span>Sign In</span>
           </button>
 
           {/* User Account / Auth */}
@@ -109,7 +116,6 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
 
         {/* Mobile menu button */}
         <div className="md:hidden flex items-center gap-2">
-          <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-[#000000] dark:text-white"
@@ -135,6 +141,15 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
             </button>
           ))}
           <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={() => {
+                onNavigate('auth');
+                setMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-2 text-xs font-semibold text-[#000000]"
+            >
+              <LogIn className="w-4 h-4 text-[#988686]" /> Sign In
+            </button>
             <button
               onClick={() => {
                 onNavigate('cart');

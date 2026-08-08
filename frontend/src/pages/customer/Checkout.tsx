@@ -32,6 +32,8 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
       setIsProcessing(false);
       const newOrder: Order = {
         id: 'ord-' + Date.now(),
+        renterId: 'rnt-101',
+        renterName: 'ROVIA Atelier & Cinema Rigs',
         orderNumber: 'ROV-2026-' + Math.floor(100 + Math.random() * 900),
         customerName: 'Elena Vance',
         customerEmail: 'elena.vance@studio-noir.com',
@@ -119,7 +121,7 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
                   <Store className="w-6 h-6 text-[#988686]" />
                   <div>
                     <h3 className="font-bold text-sm text-[#000000] dark:text-white">Collect from Store</h3>
-                    <p className="text-xs text-[#988686]">Mumbai HQ Atelier (10:00 - 19:00)</p>
+                    <p className="text-xs text-[#988686]">Renter Atelier Location (10:00 - 19:00)</p>
                   </div>
                 </div>
               </Card>
@@ -141,7 +143,7 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
               <div className="glass-panel p-6 rounded-2xl border border-[#988686]/30 space-y-3">
                 <div className="flex items-center gap-2 text-sm font-bold text-[#000000] dark:text-white">
                   <MapPin className="w-5 h-5 text-[#988686]" />
-                  <span>ROVIA Mumbai HQ Main Atelier</span>
+                  <span>Renter Store Pickup Location</span>
                 </div>
                 <p className="text-xs text-[#5C4E4E] dark:text-[#B5A9A9]">
                   Building 7B, Laxmi Industrial Estate, New Link Road, Andheri West, Mumbai.
@@ -185,7 +187,6 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
               Payment & Security Deposit Authorization
             </h2>
 
-            {/* Deposit Info Callout Banner */}
             <div className="p-4 rounded-2xl bg-[#5E7286]/15 border border-[#5E7286]/30 flex items-start gap-4">
               <ShieldCheck className="w-8 h-8 text-[#5E7286] shrink-0 mt-1" />
               <div className="space-y-1 text-xs">
@@ -197,7 +198,6 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
               </div>
             </div>
 
-            {/* Payment Method Selector */}
             <div className="space-y-4 glass-panel p-6 rounded-2xl border border-[#988686]/30">
               <div className="flex gap-4">
                 <button

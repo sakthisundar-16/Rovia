@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/ui/Toast';
@@ -22,8 +21,11 @@ import { OrderDetail } from './pages/customer/OrderDetail';
 import { Profile } from './pages/customer/Profile';
 import { ReturnFlow } from './pages/customer/ReturnFlow';
 
-// Admin Pages
+// Admin / Renter Pages
 import { Dashboard } from './pages/admin/Dashboard';
+import { Renters } from './pages/admin/Renters';
+import { Payouts } from './pages/admin/Payouts';
+import { Disputes } from './pages/admin/Disputes';
 import { Quotations } from './pages/admin/Quotations';
 import { Orders } from './pages/admin/Orders';
 import { PickupReturn } from './pages/admin/PickupReturn';
@@ -34,14 +36,37 @@ import { Customers } from './pages/admin/Customers';
 import { Reports } from './pages/admin/Reports';
 import { Settings } from './pages/admin/Settings';
 
+const ADMIN_TITLES: Record<string, string> = {
+  dashboard: 'Marketplace Operations Dashboard',
+  renters: 'Renter Onboarding & KYC Governance',
+  payouts: 'Renter Revenue Settlements & Payouts',
+  disputes: 'Marketplace Dispute Arbitration',
+  quotations: 'Quotation Templates',
+  orders: 'Rental Contracts & Orders',
+  'pickup-return': 'Pickup & Return Workflow',
+  deposits: 'Security Deposits Ledger',
+  'late-fees': 'Late Fee Engine',
+  products: 'Products & Inventory',
+  customers: 'Customer CRM',
+  reports: 'Marketplace Analytics',
+  settings: 'System Configuration',
+  profile: 'My Account Profile',
+};
+
 const MainAppContent: React.FC = () => {
-  const { mode } = useAuth();
+  const { mode, switchMode } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
   const [customerTab, setCustomerTab] = useState('landing');
   const [adminTab, setAdminTab] = useState('dashboard');
 
   const [selectedProductId, setSelectedProductId] = useState<string | undefined>(undefined);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>(undefined);
+
+  const viewStorefront = () => {
+    setCustomerTab('landing');
+    switchMode('customer');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleCustomerNavigate = (tab: string, id?: string) => {
     setCustomerTab(tab);
@@ -58,18 +83,32 @@ const MainAppContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isOps = mode === 'admin' || mode === 'renter';
+
   if (showSplash) {
     return <Splash onFinish={() => setShowSplash(false)} />;
   }
 
-  if (mode === 'admin') {
+  if (isOps) {
     return (
-      <div className="min-h-screen flex bg-[#0D0B0B] text-[#F5F3F3] antialiased">
-        <AdminSidebar currentTab={adminTab} onNavigate={handleAdminNavigate} />
+      <div className="min-h-screen flex antialiased">
+        <AdminSidebar
+          currentTab={adminTab}
+          onNavigate={handleAdminNavigate}
+          onViewStorefront={viewStorefront}
+          mode={mode}
+        />
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          <AdminTopbar title={adminTab.toUpperCase().replace('-', ' ')} />
+          <AdminTopbar
+            title={ADMIN_TITLES[adminTab] ?? 'Operations Console'}
+            mode={mode}
+            onNavigate={handleAdminNavigate}
+          />
           <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
+            {adminTab === 'renters' && <Renters />}
+            {adminTab === 'payouts' && <Payouts />}
+            {adminTab === 'disputes' && <Disputes />}
             {adminTab === 'quotations' && <Quotations />}
             {adminTab === 'orders' && <Orders selectedOrderId={selectedOrderId} />}
             {adminTab === 'pickup-return' && <PickupReturn />}
@@ -79,6 +118,7 @@ const MainAppContent: React.FC = () => {
             {adminTab === 'customers' && <Customers />}
             {adminTab === 'reports' && <Reports />}
             {adminTab === 'settings' && <Settings />}
+            {adminTab === 'profile' && <Profile />}
           </main>
         </div>
       </div>
@@ -90,7 +130,9 @@ const MainAppContent: React.FC = () => {
       <CustomerHeader currentTab={customerTab} onNavigate={handleCustomerNavigate} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {customerTab === 'landing' && <Landing onNavigate={handleCustomerNavigate} />}
-        {customerTab === 'auth' && <Auth onSuccess={() => handleCustomerNavigate('catalog')} />}
+        {customerTab === 'auth' && (
+          <Auth onSuccess={() => handleCustomerNavigate('catalog')} />
+        )}
         {customerTab === 'catalog' && <Catalog onNavigate={handleCustomerNavigate} />}
         {customerTab === 'product-detail' && (
           <ProductDetail productId={selectedProductId} onNavigate={handleCustomerNavigate} />
@@ -111,15 +153,13 @@ const MainAppContent: React.FC = () => {
 
 export function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <ToastProvider>
-            <MainAppContent />
-          </ToastProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <CartProvider>
+        <ToastProvider>
+          <MainAppContent />
+        </ToastProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

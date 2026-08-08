@@ -1,21 +1,75 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, Phone, User, ShieldCheck, ArrowRight, Building, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Phone, User, ShieldCheck, ArrowRight, Building, UserCheck, LayoutGrid } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, Role } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 
-export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-  const [role, setRole] = useState<'customer' | 'renter'>('customer');
+interface AuthProps {
+  onSuccess: (role: Role) => void;
+}
+
+const ROLE_META: Record<Role, { label: string; sub: string; icon: React.ReactNode; headline: string; description: string }> = {
+  customer: {
+    label: 'Customer',
+    sub: 'Portal User',
+    icon: <UserCheck className="w-4 h-4" />,
+    headline: 'Customer Rental Portal & Atelier',
+    description:
+      'Browse universal rental products, select delivery or store pickup, authorize 100% refundable deposits, and download tax invoices.',
+  },
+  renter: {
+    label: 'Renter',
+    sub: 'Business Ops',
+    icon: <Building className="w-4 h-4" />,
+    headline: 'Renter Operations & Inventory Console',
+    description:
+      'Configure organization pricelists, time-bound rental periods, quotation templates, asset QR tracking, and late fee deposit deductions.',
+  },
+  admin: {
+    label: 'Admin',
+    sub: 'Platform',
+    icon: <ShieldCheck className="w-4 h-4" />,
+    headline: 'Platform Admin Console & Governance',
+    description:
+      'Full platform governance, customers CRM, reports & analytics, organization settings, and supervision across all renter businesses.',
+  },
+};
+
+const DEMO_CREDENTIALS: Record<Role, { email: string; password: string; name: string; phone: string; company: string }> = {
+  customer: {
+    email: 'elena.vance@studio-noir.com',
+    password: 'GothicNoir2026!',
+    name: 'Elena Vance',
+    phone: '+91 98765 43210',
+    company: 'Studio Noir Atelier',
+  },
+  renter: {
+    email: 'renter@urbangear-rentals.in',
+    password: 'UrbanGear2026!',
+    name: 'Ravi Kapoor',
+    phone: '+91 98300 22110',
+    company: 'Urban Gear Rentals',
+  },
+  admin: {
+    email: 'marcus.sterling@rovia-ops.com',
+    password: 'RoviaOps2026!',
+    name: 'Marcus Sterling',
+    phone: '+91 99000 11223',
+    company: 'ROVIA Operations HQ',
+  },
+};
+
+export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
+  const [role, setRole] = useState<Role>('customer');
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Default pre-filled credentials for testing convenience
-  const [email, setEmail] = useState('elena.vance@studio-noir.com');
-  const [password, setPassword] = useState('GothicNoir2026!');
-  const [name, setName] = useState('Elena Vance');
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [company, setCompany] = useState('Studio Noir Atelier');
+  const [email, setEmail] = useState(DEMO_CREDENTIALS.customer.email);
+  const [password, setPassword] = useState(DEMO_CREDENTIALS.customer.password);
+  const [name, setName] = useState(DEMO_CREDENTIALS.customer.name);
+  const [phone, setPhone] = useState(DEMO_CREDENTIALS.customer.phone);
+  const [company, setCompany] = useState(DEMO_CREDENTIALS.customer.company);
 
   const [rememberMe, setRememberMe] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(true);
@@ -24,18 +78,17 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const { login } = useAuth();
   const { showToast } = useToast();
 
-  const handleRoleChange = (selectedRole: 'customer' | 'renter') => {
+  const meta = ROLE_META[role];
+
+  const handleRoleChange = (selectedRole: Role) => {
     setRole(selectedRole);
     setErrors({});
-    if (selectedRole === 'renter') {
-      setEmail('marcus.sterling@rovia-ops.com');
-      setName('Marcus Sterling');
-      setCompany('ROVIA Central Operations');
-    } else {
-      setEmail('elena.vance@studio-noir.com');
-      setName('Elena Vance');
-      setCompany('Studio Noir Atelier');
-    }
+    const creds = DEMO_CREDENTIALS[selectedRole];
+    setEmail(creds.email);
+    setPassword(creds.password);
+    setName(creds.name);
+    setPhone(creds.phone);
+    setCompany(creds.company);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,14 +113,14 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     }
 
     setErrors({});
-    // Log in as selected role
-    login(email, role === 'renter' ? 'admin' : 'customer');
+    const roleLabel = role === 'customer' ? 'Customer' : role === 'renter' ? 'Renter' : 'Admin';
+    login(email, role);
     showToast(
-      isSignUp ? 'Account & Profile Created!' : `Welcome Back, ${role === 'renter' ? 'Renter Admin' : 'Customer'}!`,
-      `Logged in as ${name} (${role === 'renter' ? 'Operations Renter' : 'Portal User'})`,
+      isSignUp ? 'Account & Profile Created!' : `Welcome Back, ${roleLabel}!`,
+      `Logged in as ${name} (${meta.label} ${meta.sub})`,
       'success'
     );
-    onSuccess();
+    onSuccess(role);
   };
 
   return (
@@ -76,12 +129,9 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         {/* Left Brand Panel */}
         <div className="lg:col-span-5 relative bg-[#0D0B0B] p-8 sm:p-12 flex flex-col justify-between overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-color-dodge pointer-events-none"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1200')`,
-            }}
+            className="absolute inset-0 bg-site-image opacity-45 mix-blend-luminosity pointer-events-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0D0B0B] via-[#5C4E4E]/60 to-[#0D0B0B]/80 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0D0B0B] via-[#3D3333]/50 to-[#0D0B0B]/70 pointer-events-none" />
 
           {/* Logo Brand Header */}
           <div className="relative z-10 flex items-center gap-3">
@@ -92,7 +142,7 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
             />
             <div className="flex flex-col">
               <span className="font-heading text-2xl font-bold tracking-tight text-white">ROVIA</span>
-              <span className="text-[9px] uppercase tracking-widest text-[#988686] font-semibold">
+              <span className="text-[9px] uppercase tracking-widest text-[#B5A9A9] font-semibold">
                 RENT • USE • RETURN • REUSE
               </span>
             </div>
@@ -101,64 +151,62 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
           {/* Dynamic Role Headline */}
           <div className="relative z-10 space-y-4 my-8">
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
-              {role === 'renter'
-                ? 'Renter Operations & Inventory Console'
-                : 'Customer Rental Portal & Atelier'}
+              {meta.headline}
             </h2>
             <p className="text-xs text-[#D1D0D0] leading-relaxed font-light">
-              {role === 'renter'
-                ? 'Configure organization pricelists, time-bound rental periods, quotation templates, asset QR tracking, and late fee deposit deductions.'
-                : 'Browse universal rental products, select delivery or store pickup, authorize 100% refundable deposits, and download tax invoices.'}
+              {meta.description}
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center gap-2 text-xs text-[#988686] font-mono border-t border-[#988686]/30 pt-4">
+          <div className="relative z-10 flex items-center gap-2 text-xs text-[#B5A9A9] font-mono border-t border-[#988686]/30 pt-4">
             <ShieldCheck className="w-4 h-4 text-[#5E7A63]" />
-            <span>256-Bit Encrypted Dual-Role Portal</span>
+            <span>256-Bit Encrypted Tri-Role Portal</span>
           </div>
         </div>
 
         {/* Right Form Section */}
-        <div className="lg:col-span-7 bg-[#FFFFFF] dark:bg-[#0D0B0B] p-8 sm:p-12 flex flex-col justify-center">
-          {/* Role Selector Tabs (Customer vs Renter) */}
+        <div className="lg:col-span-7 bg-white p-8 sm:p-12 flex flex-col justify-center">
+          {/* Role Selector Tabs */}
           <div className="space-y-4 mb-6">
             <span className="text-[10px] font-mono text-[#988686] uppercase tracking-widest block font-bold">
               SELECT LOGIN ROLE PORTAL
             </span>
-            <div className="grid grid-cols-2 gap-3 p-1 rounded-2xl bg-[#988686]/15">
-              <button
-                type="button"
-                onClick={() => handleRoleChange('customer')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  role === 'customer'
-                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-md'
-                    : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10'
-                }`}
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>Customer (Portal User)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleChange('renter')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  role === 'renter'
-                    ? 'bg-[#000000] dark:bg-[#988686] text-white shadow-warm-md'
-                    : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10'
-                }`}
-              >
-                <Building className="w-4 h-4" />
-                <span>Renter (Admin / Ops)</span>
-              </button>
+            <div className="grid grid-cols-3 gap-3 p-1 rounded-2xl bg-[#988686]/15">
+              {(Object.keys(ROLE_META) as Role[]).map((r) => {
+                const m = ROLE_META[r];
+                const isActive = role === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => handleRoleChange(r)}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      isActive
+                        ? 'bg-[#000000] text-white shadow-warm-md'
+                        : 'text-[#5C4E4E] hover:bg-[#988686]/10'
+                    }`}
+                  >
+                    {m.icon}
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-[#988686] font-mono">
+              <LayoutGrid className="w-3 h-3" />
+              <span>{meta.label} ({meta.sub})</span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-[#D1D0D0]/30 dark:border-[#5C4E4E]/30 pb-3">
-              <h3 className="font-heading text-2xl font-bold text-[#000000] dark:text-[#F5F3F3]">
+            <div className="flex items-center justify-between border-b border-[#D1D0D0]/40 pb-3">
+              <h3 className="font-heading text-2xl font-bold text-[#000000]">
                 {isSignUp
-                  ? role === 'renter'
+                  ? role === 'admin'
+                    ? 'Register Admin Access'
+                    : role === 'renter'
                     ? 'Register Renter Business'
                     : 'Register Customer Profile'
+                  : role === 'admin'
+                  ? 'Platform Admin Sign In'
                   : role === 'renter'
                   ? 'Renter Operations Sign In'
                   : 'Customer Sign In'}
@@ -182,7 +230,7 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
               <>
                 <Input
                   label="Full Name"
-                  placeholder={role === 'renter' ? 'e.g. Marcus Sterling' : 'e.g. Elena Vance'}
+                  placeholder={role === 'renter' ? 'e.g. Ravi Kapoor' : role === 'admin' ? 'e.g. Marcus Sterling' : 'e.g. Elena Vance'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   error={errors.name}
@@ -196,10 +244,10 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
                   error={errors.phone}
                   leftIcon={<Phone className="w-4 h-4" />}
                 />
-                {role === 'renter' && (
+                {role !== 'customer' && (
                   <Input
-                    label="Rental Company / Organization Name"
-                    placeholder="e.g. ROVIA Central Operations"
+                    label={role === 'admin' ? 'Platform / Organization Name' : 'Rental Company / Organization Name'}
+                    placeholder="e.g. ROVIA Operations HQ"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     leftIcon={<Building className="w-4 h-4" />}
@@ -239,7 +287,7 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
             {!isSignUp ? (
               <div className="flex items-center justify-between text-xs pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-[#5C4E4E] dark:text-[#B5A9A9]">
+                <label className="flex items-center gap-2 cursor-pointer text-[#5C4E4E]">
                   <input
                     type="checkbox"
                     checked={rememberMe}
@@ -254,7 +302,7 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
               </div>
             ) : (
               <div className="text-xs pt-1">
-                <label className="flex items-start gap-2 cursor-pointer text-[#5C4E4E] dark:text-[#B5A9A9]">
+                <label className="flex items-start gap-2 cursor-pointer text-[#5C4E4E]">
                   <input
                     type="checkbox"
                     checked={termsAccepted}
@@ -269,7 +317,9 @@ export const Auth: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
             )}
 
             <Button type="submit" size="lg" className="w-full mt-4" rightIcon={<ArrowRight className="w-4 h-4" />}>
-              {isSignUp ? `Create ${role === 'renter' ? 'Renter Admin' : 'Customer'} Account` : `Sign In as ${role === 'renter' ? 'Renter' : 'Customer'}`}
+              {isSignUp
+                ? `Create ${role === 'admin' ? 'Admin' : role === 'renter' ? 'Renter' : 'Customer'} Account`
+                : `Sign In as ${role === 'admin' ? 'Admin' : role === 'renter' ? 'Renter' : 'Customer'}`}
             </Button>
           </form>
         </div>

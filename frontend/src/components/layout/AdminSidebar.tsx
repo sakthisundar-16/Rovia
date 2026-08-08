@@ -13,39 +13,53 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
+  UserRound,
+  Building,
+  DollarSign,
+  Scale,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { Role } from '../../context/AuthContext';
 
 interface AdminSidebarProps {
   currentTab: string;
   onNavigate: (tab: string) => void;
+  onViewStorefront: () => void;
+  mode: Role;
 }
 
-export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentTab, onNavigate }) => {
+export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentTab, onNavigate, onViewStorefront, mode }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const { switchMode } = useAuth();
+
+  const isAdmin = mode === 'admin';
+  const isRenter = mode === 'renter';
 
   const navItems = [
-    { id: 'dashboard', label: 'Operations Center', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'quotations', label: 'Quotations', icon: <FileText className="w-4 h-4" /> },
-    { id: 'orders', label: 'Rental Contracts', icon: <ShoppingBag className="w-4 h-4" /> },
+    { id: 'dashboard', label: isAdmin ? 'Platform Dashboard' : 'Renter Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    ...(isAdmin ? [{ id: 'renters', label: 'Renters Governance', icon: <Building className="w-4 h-4" /> }] : []),
+    { id: 'products', label: isRenter ? 'My Products & Rates' : 'All Marketplace Products', icon: <Package className="w-4 h-4" /> },
+    { id: 'orders', label: isRenter ? 'My Rental Orders' : 'All Platform Orders', icon: <ShoppingBag className="w-4 h-4" /> },
     { id: 'pickup-return', label: 'Pickup & Return', icon: <RotateCcw className="w-4 h-4" /> },
     { id: 'deposits', label: 'Security Deposits', icon: <ShieldAlert className="w-4 h-4" /> },
     { id: 'late-fees', label: 'Late Fee Engine', icon: <Clock className="w-4 h-4" /> },
-    { id: 'products', label: 'Products & Rates', icon: <Package className="w-4 h-4" /> },
-    { id: 'customers', label: 'Customers CRM', icon: <Users className="w-4 h-4" /> },
-    { id: 'reports', label: 'Reports & Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'settings', label: 'System Settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'payouts', label: isAdmin ? 'Renter Payouts & Fees' : 'My Payouts & Earnings', icon: <DollarSign className="w-4 h-4" /> },
+    ...(isAdmin ? [{ id: 'disputes', label: 'Dispute Arbitration', icon: <Scale className="w-4 h-4" /> }] : []),
+    { id: 'quotations', label: 'Quotation Templates', icon: <FileText className="w-4 h-4" /> },
+    ...(isAdmin ? [{ id: 'customers', label: 'Customer CRM', icon: <Users className="w-4 h-4" /> }] : []),
+    ...(isAdmin ? [{ id: 'reports', label: 'Platform Analytics', icon: <BarChart3 className="w-4 h-4" /> }] : []),
+    { id: 'settings', label: isRenter ? 'Renter Settings' : 'Platform Settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'profile', label: 'My Account Profile', icon: <UserRound className="w-4 h-4" /> },
   ];
+
+  const consoleLabel = isAdmin ? 'PLATFORM ADMIN' : 'RENTER SELLER CONSOLE';
 
   return (
     <aside
-      className={`relative sticky top-0 h-screen bg-[#0D0B0B] text-[#F5F3F3] border-r border-[#5C4E4E]/40 flex flex-col transition-all duration-300 z-30 shrink-0 ${
+      className={`relative sticky top-0 h-screen bg-white/95 dark:bg-[#0D0B0B]/95 backdrop-blur-xl text-[#000000] dark:text-white border-r border-[#5C4E4E]/20 shadow-warm-sm flex flex-col transition-all duration-300 z-30 shrink-0 ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* Brand Header */}
-      <div className="h-20 flex items-center justify-between px-4 border-b border-[#5C4E4E]/40">
+      <div className="h-20 flex items-center justify-between px-4 border-b border-[#5C4E4E]/15">
         <div
           onClick={() => onNavigate('dashboard')}
           className="flex items-center gap-3 cursor-pointer overflow-hidden"
@@ -53,14 +67,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentTab, onNaviga
           <img src="/rovia_logo.jpg" alt="ROVIA Logo" className="w-10 h-10 object-contain rounded shrink-0" />
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="font-heading text-lg font-bold tracking-tight text-white">ROVIA OPS</span>
-              <span className="text-[9px] uppercase tracking-widest text-[#988686]">ADMIN CONSOLE</span>
+              <span className="font-heading text-lg font-bold tracking-tight text-[#000000] dark:text-white">ROVIA</span>
+              <span className="text-[9px] uppercase tracking-widest text-[#988686] font-bold">{consoleLabel}</span>
             </div>
           )}
         </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md bg-[#211D1D] text-[#988686] hover:text-white transition-colors"
+          className="p-1 rounded-md bg-[#988686]/15 text-[#5C4E4E] hover:bg-[#988686]/30 hover:text-[#000000] transition-colors"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -76,12 +90,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentTab, onNaviga
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 isActive
-                  ? 'bg-[#988686] text-white shadow-warm-sm font-bold'
-                  : 'text-[#B5A9A9] hover:bg-[#211D1D] hover:text-white'
+                  ? 'bg-[#5C4E4E] text-white shadow-warm-sm font-bold'
+                  : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10 hover:text-[#000000] dark:hover:text-white'
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <span className="shrink-0 text-[#D1D0D0]">{item.icon}</span>
+              <span className={`shrink-0 ${isActive ? 'text-white' : 'text-[#988686]'}`}>{item.icon}</span>
               {!collapsed && <span className="truncate">{item.label}</span>}
               {!collapsed && item.id === 'dashboard' && (
                 <span className="ml-auto w-2 h-2 rounded-full bg-[#5E7A63] animate-pulse" />
@@ -92,13 +106,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentTab, onNaviga
       </div>
 
       {/* Customer Storefront Switcher */}
-      <div className="p-3 border-t border-[#5C4E4E]/40">
+      <div className="p-3 border-t border-[#5C4E4E]/15">
         <button
-          onClick={() => switchMode('customer')}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#5C4E4E]/50 hover:bg-[#5C4E4E] text-white text-xs font-semibold transition-colors"
+          onClick={onViewStorefront}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#5C4E4E] hover:bg-[#3D3333] text-white text-xs font-semibold transition-colors"
         >
-          <Store className="w-4 h-4 text-[#988686]" />
-          {!collapsed && <span>View Storefront</span>}
+          <Store className="w-4 h-4 text-[#B5A9A9]" />
+          {!collapsed && <span>Marketplace Storefront</span>}
         </button>
       </div>
     </aside>

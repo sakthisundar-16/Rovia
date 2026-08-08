@@ -8,9 +8,11 @@ import { Modal } from '../../components/ui/Modal';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Product } from '../../services/mockData';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 
 export const Products: React.FC = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [activeTab, setActiveTab] = useState<'Catalog' | 'Pricelists'>('Catalog');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -43,6 +45,8 @@ export const Products: React.FC = () => {
     }
 
     const created = await api.createProduct({
+      renterId: user?.id || 'rnt-101',
+      renterName: user?.company || user?.name || 'ROVIA Atelier & Cinema Rigs',
       sku,
       name,
       category,
@@ -74,7 +78,7 @@ export const Products: React.FC = () => {
           <img src={r.image} alt={r.name} className="w-10 h-10 object-cover rounded-lg" />
           <div>
             <span className="font-bold text-xs text-[#000000] dark:text-white block">{r.name}</span>
-            <span className="text-[10px] text-[#988686] font-mono">{r.sku}</span>
+            <span className="text-[10px] text-[#988686] font-mono">{r.sku} • {r.renterName}</span>
           </div>
         </div>
       ),
