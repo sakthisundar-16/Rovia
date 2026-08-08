@@ -8,6 +8,8 @@ import { UNIVERSAL_PRODUCTS, Product } from '../../services/mockData';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
+
 interface ProductDetailProps {
   productId?: string;
   onNavigate: (tab: string, productId?: string) => void;
@@ -74,6 +76,9 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
             <img
               src={product.gallery[activeImageIndex] || product.image}
               alt={product.name}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+              }}
               className="w-full h-full object-cover transition-all duration-300"
             />
             <div className="absolute top-4 left-4">
@@ -94,7 +99,14 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`Thumbnail ${idx}`}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                    }}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>

@@ -9,6 +9,8 @@ import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
+
 interface CatalogProps {
   onNavigate: (tab: string, productId?: string) => void;
 }
@@ -227,6 +229,9 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                       <img
                         src={product.image}
                         alt={product.name}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3 left-3">

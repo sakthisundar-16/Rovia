@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2 } from 'lucide-react';
+import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { FileUpload } from '../../components/ui/FileUpload';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Product } from '../../services/mockData';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
 
 export const Products: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +29,10 @@ export const Products: React.FC = () => {
   const [dailyRate, setDailyRate] = useState(5000);
   const [securityDeposit, setSecurityDeposit] = useState(25000);
   const [stock, setStock] = useState(3);
-  const [image, setImage] = useState('https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800');
+  
+  // Image Upload / Link Mode
+  const [imageInputType, setImageInputType] = useState<'URL' | 'UPLOAD'>('URL');
+  const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800');
   const [description, setDescription] = useState('');
 
   const loadProducts = () => {
@@ -37,12 +43,25 @@ export const Products: React.FC = () => {
     loadProducts();
   }, []);
 
+  const handleFileUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (reader.result) {
+        setImageUrl(reader.result as string);
+        showToast('Image Loaded Successfully', 'File converted to base64 preview format.', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !sku) {
       showToast('Validation Error', 'Product Name and SKU are required', 'error');
       return;
     }
+
+    const finalImage = imageUrl.trim() || FALLBACK_IMAGE;
 
     const created = await api.createProduct({
       renterId: user?.id || 'rnt-101',
@@ -57,8 +76,8 @@ export const Products: React.FC = () => {
       stock: Number(stock),
       available: Number(stock),
       rating: 5.0,
-      image: image || 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800',
-      gallery: [image],
+      image: finalImage,
+      gallery: [finalImage],
       description: description || `Universal rental item under ${category}`,
       specs: { Category: category, SKU: sku },
       variants: ['Standard Rental Package'],
@@ -66,6 +85,13 @@ export const Products: React.FC = () => {
 
     showToast('Universal Rental SKU Added!', `${name} added to live catalog & backend API.`, 'success');
     setShowAddModal(false);
+    
+    // Reset Form
+    setName('');
+    setSku('');
+    setBrand('');
+    setDescription('');
+    setImageUrl(FALLBACK_IMAGE);
     loadProducts();
   };
 
@@ -75,7 +101,14 @@ export const Products: React.FC = () => {
       header: 'Product Item',
       render: (r) => (
         <div className="flex items-center gap-3">
-          <img src={r.image} alt={r.name} className="w-10 h-10 object-cover rounded-lg" />
+          <img
+            src={r.image}
+            alt={r.name}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+            }}
+            className="w-10 h-10 object-cover rounded-lg border border-[#988686]/30 bg-black/40"
+          />
           <div>
             <span className="font-bold text-xs text-[#000000] dark:text-white block">{r.name}</span>
             <span className="text-[10px] text-[#988686] font-mono">{r.sku} • {r.renterName}</span>
@@ -186,7 +219,63 @@ export const Products: React.FC = () => {
             <Input label="Initial Stock Units" type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </div>
 
-          <Input label="Product Image URL" placeholder="https://..." value={image} onChange={(e) => setImage(e.target.value)} />
+          {/* Product Image Selection Mode: Direct Upload vs Link URL */}
+          <div className="space-y-2 border-t border-[#988686]/20 pt-3">
+            <label className="font-semibold text-[#5C4E4E] dark:text-[#B5A9A9] uppercase block">
+              Product Image Attachment
+            </label>
+            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#988686]/15 max-w-xs">
+              <button
+                type="button"
+                onClick={() => setImageInputType('URL')}
+                className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  imageInputType === 'URL' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" /> Image Link URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageInputType('UPLOAD')}
+                className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  imageInputType === 'UPLOAD' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" /> Direct File Upload
+              </button>
+            </div>
+
+            {imageInputType === 'URL' ? (
+              <Input
+                label="Image URL Address"
+                placeholder="https://images.unsplash.com/..."
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+              />
+            ) : (
+              <FileUpload label="Select Image File from Computer" onFileSelect={handleFileUpload} />
+            )}
+
+            {/* Live Image Preview Box */}
+            <div className="mt-2 p-3 rounded-xl glass-panel border border-[#988686]/30 flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-[#988686]/40">
+                <img
+                  src={imageUrl}
+                  alt="Product Preview"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-xs">
+                <span className="font-bold text-[#000000] dark:text-white block">Image Live Preview</span>
+                <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{imageUrl}</p>
+                <span className="text-[10px] text-[#5E7A63] font-semibold mt-0.5 block">✓ Verified preview status</span>
+              </div>
+            </div>
+          </div>
+
           <Input label="Short Description" placeholder="Key specs and rental features..." value={description} onChange={(e) => setDescription(e.target.value)} />
 
           <Button type="submit" className="w-full mt-2" leftIcon={<CheckCircle2 className="w-4 h-4" />}>
