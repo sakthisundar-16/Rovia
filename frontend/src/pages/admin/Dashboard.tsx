@@ -371,7 +371,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         size="sm"
                         className="flex-1 text-[11px] py-1 border-[#988686]/40 text-[#988686] hover:text-white"
                         variant="outline"
-                        onClick={() => window.open(`http://localhost:3000/staff-scanner.html?token=${o.orderNumber}`, '_blank')}
+                        onClick={() => window.open(`${window.location.origin}/staff-scanner.html?token=${o.orderNumber}`, '_blank')}
                       >
                         Verify Handover QR 📱
                       </Button>

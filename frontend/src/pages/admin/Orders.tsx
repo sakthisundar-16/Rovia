@@ -176,7 +176,7 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
             className="border-[#988686]/40 text-[#988686] hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
-              window.open(`http://localhost:3000/staff-scanner.html?token=${r.orderNumber}`, '_blank');
+              window.open(`${window.location.origin}/staff-scanner.html?token=${r.orderNumber}`, '_blank');
             }}
           >
             Scan &amp; Verify QR 📱
