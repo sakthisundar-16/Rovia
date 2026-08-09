@@ -114,6 +114,27 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
     setErrors({});
     const roleLabel = role === 'customer' ? 'Customer' : role === 'renter' ? 'Renter' : 'Admin';
+    
+    if (isSignUp) {
+      const [firstName, ...lastNameParts] = name.split(' ');
+      const lastName = lastNameParts.join(' ') || 'User';
+      
+      // Attempt real registration on the backend
+      try {
+        const { authApi } = await import('../../services/apiClient');
+        await authApi.register({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          organization_name: company || name,
+          organization_slug: (company || name).toLowerCase().replace(/[^a-z0-9]/g, '-')
+        });
+      } catch (e) {
+        console.error('Registration failed or fell back to demo', e);
+      }
+    }
+
     // Pass password so AuthContext can attempt real backend login
     await login(email, role, password);
     showToast(

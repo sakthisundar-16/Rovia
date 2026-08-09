@@ -235,8 +235,8 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3 left-3">
-                        <Badge variant={product.available > 0 ? 'success' : 'danger'}>
-                          {product.available > 0 ? `${product.available} In Stock` : 'Booked Out'}
+                        <Badge variant={product.available === 0 ? 'danger' : product.available < 3 ? 'warning' : 'success'}>
+                          {product.available === 0 ? 'Unavailable' : product.available < 3 ? `Only ${product.available} Left` : `${product.available} In Stock`}
                         </Badge>
                       </div>
                     </div>
@@ -265,11 +265,12 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
 
                     <Button
                       size="sm"
-                      variant="primary"
+                      variant={product.available === 0 ? "outline" : "primary"}
+                      disabled={product.available === 0}
                       leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
                       onClick={(e) => handleQuickAdd(e, product)}
                     >
-                      Quick Add
+                      {product.available === 0 ? 'Out of Stock' : 'Quick Add'}
                     </Button>
                   </div>
                 </Card>
