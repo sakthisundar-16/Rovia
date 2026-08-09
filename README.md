@@ -8,7 +8,15 @@
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)](https://vercel.com)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render)](https://render.com)
 
-**ROVIA** is an enterprise-grade, multi-vendor rental marketplace and asset operations platform. Built for camera equipment, heavy machinery, luxury mobility, event logistics, and professional gear, ROVIA powers end-to-end rental lifecycles — from catalog discovery and escrow security deposit management to mobile QR code handover verifications and real-time return collection queues.
+> 🏆 **Built for the Odoo Hackathon 2026**
+
+**ROVIA** is an enterprise-grade, multi-vendor rental marketplace and asset operations platform. Built for camera equipment, heavy machinery, luxury mobility, event logistics, and professional gear, ROVIA powers end-to-end rental lifecycles — from catalog discovery and escrow security deposit management to QR code handover verifications and real-time return queues.
+
+## 🚀 Live Deployments
+
+- **Frontend (Vercel)**: [https://rovia.vercel.app](https://rovia.vercel.app) *(Replace with your actual Vercel URL)*
+- **Backend API (Render)**: [https://rovia-backend-pz8b.onrender.com](https://rovia-backend-pz8b.onrender.com)
+- **API Documentation**: [https://rovia-backend-pz8b.onrender.com/docs](https://rovia-backend-pz8b.onrender.com/docs)
 
 ---
 
@@ -16,29 +24,27 @@
 
 ```mermaid
 graph TD
-    subgraph Client ["Client Layer (Vercel SPA & Mobile)"]
-        A[Customer Storefront & Catalog] --> B[Cart & Checkout Engine]
+    subgraph Client ["Frontend Layer (Vercel SPA)"]
+        A[Customer Storefront & Catalog] --> B[Order & Checkout Engine]
         B --> C[Customer Dashboard / My Rentals]
-        D[Renter / Admin Console] --> E[Logistics Hub & Orders]
-        F[Mobile Staff Scanner Panel] --> G[Live QR / PDF / Photo Engine]
+        D[Renter / Admin Console] --> E[Logistics Hub & Inventory]
+        F[Profile Management] --> G[Persistent User Settings]
     end
 
     subgraph Sync ["Real-Time State Synchronization"]
-        H[BroadcastChannel API] <-->|Order State & Verification Events| C
-        H <-->|Handover & Return Alerts| E
+        H[WebSocket / Polling Engine] <-->|Order State & Verifications| C
+        H <-->|Return Alerts & Notifications| E
     end
 
     subgraph API ["Backend API Layer (FastAPI on Render)"]
-        I[REST API Router /api/v1] --> J[Auth & JWT Middleware]
-        I --> K[Products & Catalog Service]
-        I --> L[Rental Orders & Escrow Service]
-        I --> M[Handover Verification Endpoint]
+        I[REST API Router /api/v1] --> J[Auth, JWT & Profiles]
+        I --> K[Products, SKUs & Availability]
+        I --> L[Rental Orders & Return Lifecycle]
+        I --> M[QR Code Generation & Verification]
     end
 
     subgraph Data ["Data & Storage Layer"]
-        N[(PostgreSQL 15 Database)] <-->|SQLAlchemy Async ORM| I
-        O[(SQLite Fallback rovia.db)] -.-|Local Dev Mode| I
-        P[(Redis Cache / Broker)] <--> I
+        N[(PostgreSQL Database)] <-->|SQLAlchemy Async ORM| I
     end
 
     Client -->|HTTPS / REST API| API
@@ -46,168 +52,92 @@ graph TD
 
 ---
 
-## 🔄 End-to-End Rental Workflow
+## 🔄 End-to-End Application Workflow
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Customer
-    participant Storefront as ROVIA Storefront
-    participant Scanner as Mobile Staff Scanner
-    actor Renter as Renter / Logistics Staff
-    participant Backend as FastAPI & Database
+    participant Frontend as ROVIA Frontend
+    actor Renter as Renter / Admin
+    participant Backend as FastAPI & PostgreSQL
 
     rect rgb(20, 25, 35)
-        note right of Customer: Phase 1: Product Selection & Booking
-        Customer->>Storefront: Browse 300+ Products & Select Dates
-        Customer->>Storefront: Place Order (Rental Fee + Security Deposit Escrow)
-        Storefront->>Backend: Create Order & Generate QR Token (e.g. ROV-2026-566)
+        note right of Customer: Phase 1: Registration & Product Booking
+        Customer->>Frontend: Register & Update Persistent Profile
+        Customer->>Frontend: Browse Catalog & Select Product Dates
+        Customer->>Frontend: Place Order (Simulated Instant Payment)
+        Frontend->>Backend: Create Order, Reserve Asset & Generate ROV-Code
+        Backend-->>Frontend: Order Status: DRAFT / CONFIRMED
     end
 
     rect rgb(25, 35, 25)
-        note right of Renter: Phase 2: Dispatch & Handover Verification
-        Customer->>Renter: Show QR Code or PDF Invoice
-        Renter->>Scanner: Open Scanner Panel (staff-scanner.html)
-        Renter->>Scanner: Scan QR Code or Type Token Code
-        Scanner->>Backend: POST /api/rentals/verify-handover
-        Backend-->>Scanner: 200 OK — VERIFICATION PASSED
-        Backend->>Storefront: Status: Active (Handed Over)
+        note right of Renter: Phase 2: Approval & Handover Verification
+        Renter->>Frontend: Review Order in Operations Dashboard
+        Renter->>Frontend: Click "Approve Order"
+        Frontend->>Backend: Transition Status -> READY_FOR_PICKUP
+        Customer->>Frontend: View Invoice QR & Product Code
+        Renter->>Frontend: Scan QR or Validate Product Code
+        Frontend->>Backend: Verify Handover Token
+        Backend-->>Frontend: Status -> PICKED_UP / ACTIVE
     end
 
     rect rgb(35, 25, 20)
-        note right of Customer: Phase 3: Rental Period & Return Collection
-        Customer->>Storefront: Click 'Return Product Now 📦' in My Rentals
-        Storefront->>Renter: Broadcast Real-Time Return Notification
-        Renter->>Storefront: Inspect Item & Click 'Accept Return & End Process ✓'
-        Storefront->>Backend: Update Status: Completed & Escrow Deposit: Refunded
-        Backend-->>Customer: Notification: Rental Completed & Deposit Refunded
+        note right of Customer: Phase 3: Rental Period & Return Cycle
+        Customer->>Frontend: Click "Request Return" from My Rentals
+        Frontend->>Backend: Transition Status -> RETURN_DUE
+        Backend->>Frontend: Send Real-Time Alert to Admin
+        Renter->>Frontend: Inspect Item in Dashboard & Click "Complete Return"
+        Frontend->>Backend: Transition Status -> RETURNED -> COMPLETED
+        Backend-->>Customer: Notification: Rental Completed successfully!
     end
 ```
 
 ---
 
-## ✨ Key Features
+## ✨ Key Technical Features
 
-### 🛍️ 1. Multi-Category Marketplace Catalog
-- **300+ Pre-Loaded Products** across 28 categories (Cameras, Drones, Heavy Machinery, Luxury Vehicles, Medical, Event Supplies, Designer Fashion, Tools, etc.).
-- Search, filter by category, daily rate, and rental duration calculations.
+### 🛍️ 1. Multi-Category Marketplace
+- Browse highly curated products across categories (Cameras, Machinery, Fashion).
+- Unique auto-generated `ROV-YYYY-XXXX` product codes for physical inventory tracking.
+- Intelligent overlapping booking engine that auto-provisions physical assets if needed.
 
-### 📱 2. Minimalist Mobile Staff Scanner Panel (`/staff-scanner.html`)
-- **Strict Contract Token Authorization**: Enforces regex-validated format (`ROV-YYYY-XXX`). Arbitrary or invalid tokens are rejected with a red **VERIFICATION REJECTED** alert.
-- **Multi-Input Support**: Live Camera QR scanning, Image Photo upload, PDF Contract page rendering, and Manual Token Entry.
-- **Manual Confirm Flow**: Staff reviews the pre-filled code before clicking **Verify**.
+### 🛡️ 2. Role-Based Dashboards & Persistent Profiles
+- **Role-based Authentication**: Redirection logic routes Admin/Renters to the Operations Console and Customers to the Storefront.
+- **Persistent Profiles**: Edit user avatars, bio, phone, and addresses. Saved directly to the PostgreSQL database.
 
-### 🚚 3. Real-Time Logistics Operations Hub
-- **Pickups & Handover Queue**: Manages item dispatches and QR verification status.
-- **Returns & Collection Queue**: Listens to customer return requests via `BroadcastChannel` in real time.
-- **One-Click Settlement**: Renters accept returns, complete orders, and trigger automated security deposit refunds.
-
-### 🔒 4. Escrow & Financial Management
-- Dynamic security deposit calculation (5-10x daily rate held in escrow).
-- Deposit tracking ledger, payouts manager, and dispute resolution module.
+### 📱 3. Smart Verification & Logistics
+- **QR Invoices**: Dynamic QR generation endpoint encoding product IDs, customer info, and secure token hashes.
+- **Return Workflows**: Real-time multi-step return processes (Customer requests return $\rightarrow$ Admin verifies physical asset $\rightarrow$ Cycle closed).
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Dependencies
 
-| Layer | Technology |
-|---|---|
-| **Frontend Framework** | React 18, TypeScript, Vite 5 |
-| **Styling** | Vanilla CSS, TailwindCSS 3 (Obsidian / Dark Gold theme) |
-| **Icons & Media** | Lucide React, HTML5-QRCode, PDF.js |
-| **Backend API** | Python 3.11, FastAPI, Uvicorn |
-| **Database** | PostgreSQL 15 (AsyncPG), SQLite (`rovia.db` fallback) |
-| **ORM & Migrations** | SQLAlchemy 2.0 Async, Alembic |
-| **Deployment** | Vercel (Frontend SPA), Render (FastAPI + Managed PostgreSQL) |
+- **Frontend**: React 18, Vite, TypeScript, TailwindCSS, Lucide Icons, Axios.
+- **Backend**: FastAPI, Python 3.12, SQLAlchemy (Async), PostgreSQL, Pydantic (with `email-validator`), Alembic.
+- **Infrastructure**: Vercel (Static SPA), Render (Dockerized Web Service + Managed PostgreSQL Database).
 
----
+## 🚀 Local Development Setup
 
-## 📁 Repository Structure
-
-```
-Rovia/
-├── render.yaml                    # Render Blueprint config (FastAPI + PostgreSQL)
-├── README.md                      # Complete System Documentation & Diagrams
-├── .gitignore                     # Git exclusion rules
-│
-├── frontend/                      # React SPA Frontend
-│   ├── vercel.json                # Vercel SPA rewrite & header rules
-│   ├── package.json               # Dependencies & scripts
-│   ├── vite.config.ts             # Vite bundler setup
-│   ├── .env.example               # Frontend env template
-│   ├── public/
-│   │   └── staff-scanner.html     # Minimal Staff Handover Scanner Panel
-│   └── src/
-│       ├── App.tsx                # Main routing & state controller
-│       ├── components/            # UI components, layout navbars, modals
-│       ├── context/               # AuthContext & CartContext
-│       ├── pages/
-│       │   ├── customer/          # Storefront, Catalog, MyRentals, Checkout
-│       │   └── admin/             # Dashboard, Logistics Hub, Products, Orders
-│       └── services/
-│           ├── api.ts             # Primary frontend API data layer
-│           ├── apiClient.ts       # Authenticated REST client
-│           ├── mockData.ts        # Base schema interfaces & initial data
-│           └── productsData.ts    # 300+ Product catalog dataset
-│
-└── backend/                       # FastAPI Backend
-    ├── requirements.txt           # Python dependencies
-    ├── app/
-    │   ├── main.py                # FastAPI entry point & CORS configuration
-    │   ├── core/
-    │   │   ├── config.py          # Environment settings (PostgreSQL / SQLite)
-    │   │   └── database.py        # SQLAlchemy Async engine
-    │   ├── products/              # Product router, schemas, & models
-    │   └── rentals/
-    │       └── handover_verification.py  # Handover verification API
-    └── rovia.db                   # SQLite database (Local dev fallback)
-```
-
----
-
-## 🚀 Quickstart & Local Setup
-
-### 1. Prerequisites
-- Node.js `v18+` & `npm`
-- Python `3.10+`
-
-### 2. Run Backend
+### Backend
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # (or `venv\Scripts\activate` on Windows)
 pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+alembic upgrade head
+python scripts/seed.py
+uvicorn app.main:app --reload --port 8000
 ```
-> API Docs available at `http://localhost:8000/docs`
 
-### 3. Run Frontend
+### Frontend
 ```bash
 cd frontend
 npm install
+# Ensure .env contains VITE_API_URL=http://localhost:8000/api/v1
 npm run dev
 ```
-> Web App available at `http://localhost:3000`  
-> Mobile Staff Scanner available at `http://localhost:3000/staff-scanner.html`
 
 ---
-
-## ☁️ Production Deployment Guide
-
-### Deploy Backend to Render
-1. Push repo to GitHub.
-2. Open **[Render Dashboard](https://dashboard.render.com)** → New **Blueprint**.
-3. Select repo `sakthisundar-16/Rovia` → Render will auto-detect `render.yaml`.
-4. Click **Apply** to spin up **PostgreSQL 15** and the **FastAPI Web Service**.
-
-### Deploy Frontend to Vercel
-1. Open **[Vercel Dashboard](https://vercel.com)** → **Add New Project**.
-2. Select repo `sakthisundar-16/Rovia`.
-3. Set **Root Directory** to `frontend`.
-4. Add Environment Variable:
-   - `VITE_API_URL` = `https://your-render-backend.onrender.com/api/v1`
-5. Click **Deploy**.
-
----
-
-## 📄 License & Attribution
-
-Designed and engineered for **ROVIA Rental Operations Platform**.
+*Developed for the Odoo Hackathon 2026.*
