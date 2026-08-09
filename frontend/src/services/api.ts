@@ -152,7 +152,7 @@ export const api = {
 
   getProducts: async (renterId?: string): Promise<Product[]> => {
     try {
-      const res = await apiFetch('/products/');
+      const res = await apiFetch('/products');
       if (res.ok) {
         const data: any[] = await res.json();
         const products = data.map(productFromApi);
@@ -179,7 +179,7 @@ export const api = {
 
   createProduct: async (productData: Omit<Product, 'id'>): Promise<Product> => {
     try {
-      const res = await apiFetch('/products/', {
+      const res = await apiFetch('/products', {
         method: 'POST',
         body: JSON.stringify(productToApi(productData)),
       });
@@ -239,7 +239,7 @@ export const api = {
 
   getOrders: async (renterId?: string): Promise<Order[]> => {
     try {
-      const res = await apiFetch('/rentals/');
+      const res = await apiFetch('/rentals');
       if (res.ok) {
         const data: any[] = await res.json();
         const orders = data.map(orderFromApi);
@@ -260,7 +260,7 @@ export const api = {
         pickup_method: orderData.pickupMethod === 'Delivery' ? 'DELIVERY' : 'IN_STORE',
         items: [{ product_id: orderData.productName, quantity: 1 }],
       };
-      const res = await apiFetch('/rentals/', { method: 'POST', body: JSON.stringify(body) });
+      const res = await apiFetch('/rentals', { method: 'POST', body: JSON.stringify(body) });
       if (res.ok) {
         const created = orderFromApi(await res.json());
         localOrders = [created, ...loadStored('rovia_orders', INITIAL_ORDERS)];
@@ -408,7 +408,8 @@ export const api = {
   verifyHandoverToken: async (token: string): Promise<{ success: boolean; message: string; order?: Order }> => {
     const cleanToken = token.trim();
     try {
-      const res = await fetch('http://localhost:8000/api/rentals/verify-handover', {
+      const serverUrl = ((import.meta as any).env?.VITE_API_URL ?? 'http://localhost:8000').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+      const res = await fetch(`${serverUrl}/api/rentals/verify-handover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: cleanToken }),

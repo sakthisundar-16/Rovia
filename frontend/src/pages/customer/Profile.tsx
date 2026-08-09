@@ -334,6 +334,61 @@ export const Profile: React.FC = () => {
             </div>
           </div>
 
+          {/* 📖 PERMANENTLY VISIBLE "HOW TRUST SCORE WORKS" GUIDE SECTION */}
+          <div className="glass-panel p-6 rounded-2xl border border-amber-500/30 space-y-4 bg-gradient-to-br from-[#141212] via-[#090808] to-[#1F1A10]">
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-amber-400" />
+                <h3 className="font-heading text-base font-bold text-white">
+                  How Customer Trust Score Works
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                Reputation System
+              </span>
+            </div>
+
+            <p className="text-xs text-[#D1D0D0] leading-relaxed">
+              The <strong>ROVIA Customer Trust Score</strong> is an automated reputation scoring algorithm designed to reward reliable customer returns and maintain asset safety. Every member starts at <strong>850 points</strong>.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-[#5E7A63]/15 border border-[#5E7A63]/40 space-y-1">
+                <span className="text-[10px] text-[#5E7A63] uppercase block font-bold">On-Time Return</span>
+                <span className="text-base font-extrabold text-[#5E7A63]">+25 Points</span>
+                <p className="text-[10px] text-[#988686] font-sans">Returned on schedule</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#A0524E]/15 border border-[#A0524E]/40 space-y-1">
+                <span className="text-[10px] text-[#A0524E] uppercase block font-bold">Late Return</span>
+                <span className="text-base font-extrabold text-[#A0524E]">-50 Points</span>
+                <p className="text-[10px] text-[#988686] font-sans">Deducted per day</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#A0524E]/15 border border-[#A0524E]/40 space-y-1">
+                <span className="text-[10px] text-[#A0524E] uppercase block font-bold">Damaged Return</span>
+                <span className="text-base font-extrabold text-[#A0524E]">-100 Points</span>
+                <p className="text-[10px] text-[#988686] font-sans">Failed inspection</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#090808] border border-amber-500/30 text-xs space-y-2">
+              <span className="font-bold text-amber-400 block uppercase font-mono text-[11px]">
+                🌟 Tier Level Privileges:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <span className="font-bold text-amber-400 block">Platinum Tier (900 - 1000 Pts):</span>
+                  <p className="text-[#988686] mt-0.5">Zero security deposit on select gear &amp; express pickup</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#5E7A63]/10 border border-[#5E7A63]/20">
+                  <span className="font-bold text-[#5E7A63] block">Gold Tier (750 - 899 Pts):</span>
+                  <p className="text-[#988686] mt-0.5">50% reduced security deposit escrow &amp; priority support</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Security Deposit Amount Escrow Card */}
           <div className="glass-panel p-6 rounded-2xl border-2 border-[#5E7286]/50 shadow-xl space-y-4 bg-[#5E7286]/10">
             <div className="flex items-center justify-between border-b border-[#5E7286]/30 pb-3">
