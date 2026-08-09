@@ -4,7 +4,7 @@
  * All API calls go through this client so auth is automatic.
  */
 
-const API_BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1').replace(/\/$/, '');
+const API_BASE = ((import.meta as any).env?.VITE_API_URL ?? 'http://localhost:8000/api/v1').replace(/\/$/, '');
 const TOKEN_KEY = 'rovia_access_token';
 const REFRESH_KEY = 'rovia_refresh_token';
 
