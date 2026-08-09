@@ -8,7 +8,7 @@
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)](https://vercel.com)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render)](https://render.com)
 
-> 🏆 **Built for the Odoo Hackathon 2026**
+> 🏆 **Developed for Odoo x Adamas University Hackathon 2026**
 
 **ROVIA** is an enterprise-grade, multi-vendor rental marketplace and asset operations platform. Built for camera equipment, heavy machinery, luxury mobility, event logistics, and professional gear, ROVIA powers end-to-end rental lifecycles — from catalog discovery and escrow security deposit management to QR code handover verifications and real-time return queues.
 
@@ -140,4 +140,27 @@ npm run dev
 ```
 
 ---
-*Developed for the Odoo Hackathon 2026.*
+## 📚 Documentation
+
+### Frontend Documentation
+- **Framework**: Built with React 18 and Vite for fast HMR and optimized production builds.
+- **State Management & Routing**: Utilizes React Context (`AuthContext`) for global state and a custom state-based router (`App.tsx`) to switch between views without heavy client-side routing libraries.
+- **Styling**: Tailwind CSS with custom glassmorphic UI components and consistent theming.
+- **API Integration**: Centralized `api.ts` service for all backend communication, handling REST endpoints and real-time WebSocket subscriptions.
+- **Core Components**: 
+  - `Landing.tsx`: Public storefront with dynamic product highlights.
+  - `Dashboard.tsx`: Operations console for renter and admin flows.
+  - `Profile.tsx`: Persistent user profile management.
+
+### Backend Documentation
+- **Framework**: FastAPI (Python 3.12) utilizing asynchronous endpoints for high concurrency.
+- **Database**: PostgreSQL with async SQLAlchemy ORM and Alembic for schema migrations.
+- **Authentication**: JWT-based stateless authentication (`OAuth2PasswordBearer`) with role-based access control (Admin, Renter, Customer).
+- **Core Modules**:
+  - `app/rentals`: Manages order creation, asset allocation, and state transitions (Draft $\rightarrow$ Pickup $\rightarrow$ Return).
+  - `app/products`: Catalog management and unique `ROV-XXXX` SKU code generation.
+  - `app/auth`: User registration, JWT issuance, and persistent profile updates.
+- **Real-Time System**: Uses WebSockets (`app/realtime`) to broadcast state changes across connected clients.
+
+---
+*Developed for Odoo x Adamas University Hackathon 2026.*
