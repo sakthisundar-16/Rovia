@@ -18,7 +18,7 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
         <div
           className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-overlay z-0"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=1600')`,
+            backgroundImage: `url('/landing-hero.jpg')`,
           }}
         />
 
