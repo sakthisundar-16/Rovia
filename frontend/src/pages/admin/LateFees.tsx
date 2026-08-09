@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { INITIAL_ORDERS, Order } from '../../services/mockData';
+import { api } from '../../services/api';
 import { useToast } from '../../components/ui/Toast';
 
 export const LateFees: React.FC = () => {
@@ -22,11 +23,46 @@ export const LateFees: React.FC = () => {
 
   const calculatedFee = Math.round(sampleDailyRate * feeRateMultiplier * sampleDaysLate);
 
+  // Manual Invoice State
+  const [selectedOrderId, setSelectedOrderId] = useState('');
+  const [manualPenaltyAmount, setManualPenaltyAmount] = useState<number>(0);
+  const [manualPenaltyReason, setManualPenaltyReason] = useState('');
+
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  const handleIssueManualInvoice = async () => {
+    if (!selectedOrderId || manualPenaltyAmount <= 0) {
+      showToast('Error', 'Please select an order and enter a valid penalty amount.', 'error');
+      return;
+    }
+    const order = orders.find(o => o.id === selectedOrderId);
+    if (!order) return;
+
+    const res = await api.updateOrder(order.id, {
+      penaltyIssued: true,
+      penaltyAmount: manualPenaltyAmount,
+      deductionReason: manualPenaltyReason,
+      timeline: [...order.timeline, { stage: 'Penalty Invoice Issued (Manual)', timestamp: new Date().toISOString(), completed: true, notes: manualPenaltyReason }]
+    });
+
+    if (res) {
+      showToast('Manual Invoice Sent', `Penalty of ₹${manualPenaltyAmount} sent to ${order.customerName}`, 'success');
+      setOrders(prev => prev.map(o => o.id === res.id ? res : o));
+      setSelectedOrderId('');
+      setManualPenaltyAmount(0);
+      setManualPenaltyReason('');
+    }
+  };
+
   const handleSaveRules = () => {
     showToast('Rules Engine Saved', 'Late fee penalty calculation rules updated system-wide.', 'success');
   };
 
-  const overdueOrders = INITIAL_ORDERS.filter((o) => o.status === 'Overdue');
+  React.useEffect(() => {
+    api.getOrders().then(setOrders);
+  }, []);
+
+  const overdueOrders = orders.filter((o) => o.status === 'Overdue');
 
   const overdueColumns: Column<Order>[] = [
     { key: 'orderNumber', header: 'Contract #', render: (r) => <span className="font-mono font-bold text-[#A0524E]">{r.orderNumber}</span> },
@@ -38,8 +74,24 @@ export const LateFees: React.FC = () => {
       key: 'actions',
       header: 'Action',
       render: (r) => (
-        <Button size="sm" variant="destructive" onClick={() => showToast('Invoice Sent', `Penalty auto-invoice sent to ${r.customerName}`, 'success')}>
-          Issue Penalty Invoice
+        <Button 
+          size="sm" 
+          variant={r.penaltyIssued ? "outline" : "destructive"} 
+          disabled={r.penaltyIssued}
+          onClick={async () => {
+            if (r.penaltyIssued) return;
+            const res = await api.updateOrder(r.id, { 
+              penaltyIssued: true, 
+              penaltyAmount: r.estimatedPenalty || 0,
+              timeline: [...r.timeline, { stage: 'Penalty Invoice Issued', timestamp: new Date().toISOString(), completed: true }] 
+            });
+            if (res) {
+              showToast('Invoice Sent', `Penalty auto-invoice sent to ${r.customerName}`, 'success');
+              setTimeout(() => window.location.reload(), 1000); // Reload to reflect changes
+            }
+          }}
+        >
+          {r.penaltyIssued ? 'Invoice Issued' : 'Issue Penalty Invoice'}
         </Button>
       ),
     },
@@ -134,6 +186,51 @@ export const LateFees: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Manual Penalty Assignment */}
+      <Card className="p-6 border border-[#5C4E4E]/30 bg-[#000000]/20 space-y-4">
+        <div className="flex items-center gap-2 border-b border-[#5C4E4E]/30 pb-3">
+          <ShieldAlert className="w-5 h-5 text-[#A0524E]" />
+          <h3 className="font-heading text-lg font-bold text-white">
+            Manual Penalty Assignment
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2 col-span-1 flex flex-col">
+            <label className="text-xs font-bold text-[#988686]">Select Customer/Order</label>
+            <select 
+              className="w-full h-[42px] bg-[#0D0B0B] border border-[#5C4E4E]/50 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-[#D1D0D0]"
+              value={selectedOrderId}
+              onChange={(e) => {
+                setSelectedOrderId(e.target.value);
+                const order = orders.find(o => o.id === e.target.value);
+                if (order && order.estimatedPenalty) setManualPenaltyAmount(order.estimatedPenalty);
+              }}
+            >
+              <option value="">-- Choose Order --</option>
+              {orders.filter(o => !o.penaltyIssued && ['Active', 'Past', 'Overdue'].includes(o.status)).map(o => (
+                <option key={o.id} value={o.id}>{o.orderNumber} - {o.customerName}</option>
+              ))}
+            </select>
+          </div>
+          <Input 
+            label="Penalty Amount (₹)" 
+            type="number" 
+            value={manualPenaltyAmount || ''} 
+            onChange={(e) => setManualPenaltyAmount(Number(e.target.value))} 
+          />
+          <Input 
+            label="Reason" 
+            value={manualPenaltyReason} 
+            onChange={(e) => setManualPenaltyReason(e.target.value)} 
+          />
+          <div className="flex items-end pb-1">
+            <Button variant="destructive" className="w-full" onClick={handleIssueManualInvoice}>
+              Assign & Issue Invoice
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       {/* Outstanding Penalties Table */}
       <div className="space-y-4">

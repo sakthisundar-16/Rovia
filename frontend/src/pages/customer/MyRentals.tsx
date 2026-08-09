@@ -38,7 +38,8 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
               o.customerEmail === user.email ||
               o.customerName === user.name ||
               o.customerEmail === 'customer@rovia-demo.com' ||
-              o.customerEmail === 'elena.vance@studio-noir.com'
+              o.customerEmail === 'elena.vance@studio-noir.com' ||
+              o.customerEmail === 'karan@mumbai-cinematics.in'
           )
         : allOrders;
       setOrders(myOrders);
@@ -156,6 +157,30 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
                 </div>
                 <Button size="sm" variant="destructive" onClick={() => onNavigate('return-flow')}>
                   Return Instructions
+                </Button>
+              </div>
+            )}
+
+            {/* Penalty Invoice Banner */}
+            {order.penaltyIssued && !order.penaltyPaid && (
+              <div className="p-4 rounded-xl bg-[#A0524E]/15 border border-[#A0524E]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs mb-3">
+                <div className="flex items-center gap-3 text-[#A0524E]">
+                  <FileText className="w-5 h-5 shrink-0 animate-pulse" />
+                  <div>
+                    <h4 className="font-bold text-sm">Penalty Invoice Issued</h4>
+                    <p className="text-[11px] text-[#5C4E4E] dark:text-[#B5A9A9]">
+                      A late fee penalty invoice of ₹{order.penaltyAmount?.toLocaleString()} has been issued against your account.
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" variant="destructive" onClick={async () => {
+                  const updated = await api.updateOrder(order.id, { penaltyPaid: true, timeline: [...order.timeline, { stage: 'Penalty Invoice Paid', timestamp: new Date().toISOString(), completed: true }] });
+                  if (updated) {
+                    showToast('Penalty Paid', 'Penalty invoice has been settled successfully.', 'success');
+                    setOrders(prev => prev.map(o => o.id === order.id ? updated : o));
+                  }
+                }}>
+                  Pay Penalty Now
                 </Button>
               </div>
             )}

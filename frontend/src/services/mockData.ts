@@ -91,6 +91,9 @@ export interface Order {
   deductionReason?: string;
   daysOverdue?: number;
   estimatedPenalty?: number;
+  penaltyIssued?: boolean;
+  penaltyAmount?: number;
+  penaltyPaid?: boolean;
   timeline: OrderTimeline[];
   pickupMethod: 'Delivery' | 'Store Pickup' | 'In-Store Pickup';
 }
