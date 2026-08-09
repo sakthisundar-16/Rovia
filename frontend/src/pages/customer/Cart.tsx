@@ -110,9 +110,17 @@ export const Cart: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNaviga
                   <div className="flex items-center gap-2">
                     <span className="text-[#5C4E4E] dark:text-[#B5A9A9]">Qty:</span>
                     <div className="flex items-center gap-2 glass-input px-2 py-0.5 rounded">
-                      <button onClick={() => updateQuantity(item.id, -1)} className="font-bold text-[#988686]">-</button>
+                      <button 
+                        onClick={() => updateQuantity(item.id, -1)} 
+                        disabled={item.quantity <= 1}
+                        className={`font-bold ${item.quantity <= 1 ? 'text-[#988686]/30 cursor-not-allowed' : 'text-[#988686]'}`}
+                      >-</button>
                       <span className="font-mono font-bold">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)} className="font-bold text-[#988686]">+</button>
+                      <button 
+                        onClick={() => updateQuantity(item.id, 1)} 
+                        disabled={item.quantity >= (item.available || 100)}
+                        className={`font-bold ${item.quantity >= (item.available || 100) ? 'text-[#988686]/30 cursor-not-allowed' : 'text-[#988686]'}`}
+                      >+</button>
                     </div>
                   </div>
 

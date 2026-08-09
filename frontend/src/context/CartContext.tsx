@@ -13,6 +13,7 @@ export interface CartItem {
   endDate: string;
   days: number;
   quantity: number;
+  available: number;
 }
 
 interface CartContextType {
@@ -49,6 +50,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       endDate: '2026-08-13',
       days: 3,
       quantity: 1,
+      available: 5,
     },
     {
       id: 'cart-2',
@@ -63,6 +65,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       endDate: '2026-08-13',
       days: 3,
       quantity: 1,
+      available: 10,
     }
   ]);
 
@@ -90,7 +93,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems(prev =>
       prev.map(item => {
         if (item.id === id) {
-          const newQty = Math.max(1, item.quantity + delta);
+          const newQty = Math.max(1, Math.min(item.available || 100, item.quantity + delta));
           return { ...item, quantity: newQty };
         }
         return item;

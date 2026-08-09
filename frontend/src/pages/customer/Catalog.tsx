@@ -74,6 +74,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
       startDate,
       endDate,
       quantity: 1,
+      available: product.available,
     });
     showToast('Added to Rental Bag', `${product.name} booked from ${product.renterName}`, 'success');
   };

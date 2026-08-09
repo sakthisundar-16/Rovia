@@ -49,6 +49,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
       startDate,
       endDate,
       quantity,
+      available: product.available,
     });
     showToast('Added to Rental Cart', `${product.name} booked from ${product.renterName}`, 'success');
   };
@@ -238,14 +239,16 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 <div className="flex items-center gap-3 glass-input px-3 py-1 rounded-lg">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="font-bold text-sm text-[#988686]"
+                    disabled={quantity <= 1}
+                    className={`font-bold text-sm ${quantity <= 1 ? 'text-[#988686]/30 cursor-not-allowed' : 'text-[#988686]'}`}
                   >
                     -
                   </button>
                   <span className="font-mono font-bold">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="font-bold text-sm text-[#988686]"
+                    onClick={() => setQuantity(Math.min(product.available, quantity + 1))}
+                    disabled={quantity >= product.available}
+                    className={`font-bold text-sm ${quantity >= product.available ? 'text-[#988686]/30 cursor-not-allowed' : 'text-[#988686]'}`}
                   >
                     +
                   </button>
