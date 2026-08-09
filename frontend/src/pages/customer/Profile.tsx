@@ -30,7 +30,11 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../services/api';
 import { Order } from '../../services/mockData';
 
-export const Profile: React.FC = () => {
+interface ProfileProps {
+  highlightTrustScore?: boolean;
+}
+
+export const Profile: React.FC<ProfileProps> = ({ highlightTrustScore }) => {
   const { user, updateProfile } = useAuth();
   const { showToast } = useToast();
 
@@ -43,8 +47,18 @@ export const Profile: React.FC = () => {
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400'
   );
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [showTrustScoreInfoModal, setShowTrustScoreInfoModal] = useState(false);
+  const [showTrustScoreInfoModal, setShowTrustScoreInfoModal] = useState(highlightTrustScore || false);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    if (highlightTrustScore) {
+      setShowTrustScoreInfoModal(true);
+      setTimeout(() => {
+        const el = document.getElementById('trust-score-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [highlightTrustScore]);
 
   const [addresses, setAddresses] = useState([
     {
@@ -225,7 +239,7 @@ export const Profile: React.FC = () => {
           </Card>
 
           {/* 🌟 DYNAMIC CUSTOMER TRUST SCORE CARD */}
-          <div className="glass-panel p-6 rounded-2xl border-2 border-amber-500/40 shadow-2xl space-y-5 bg-gradient-to-b from-amber-500/10 via-transparent to-[#141212]">
+          <div id="trust-score-section" className="glass-panel p-6 rounded-2xl border-2 border-amber-500/40 shadow-2xl space-y-5 bg-gradient-to-b from-amber-500/10 via-transparent to-[#141212]">
             <div className="flex items-center justify-between border-b border-amber-500/30 pb-3">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-400" />

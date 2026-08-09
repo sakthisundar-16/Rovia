@@ -165,6 +165,7 @@ const MainAppContent: React.FC = () => {
           <OrderDetail orderId={selectedOrderId} onNavigate={handleCustomerNavigate} />
         )}
         {customerTab === 'profile' && <Profile />}
+        {customerTab === 'trust-score' && <Profile highlightTrustScore={true} />}
         {customerTab === 'return-flow' && <ReturnFlow onNavigate={handleCustomerNavigate} />}
       </main>
       <CustomerFooter />

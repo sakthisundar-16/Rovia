@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ShoppingBag,
   User,
@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Search,
   LogOut,
+  Award,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -21,7 +22,7 @@ interface CustomerNavbarProps {
 export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNavigate }) => {
   const { items } = useCart();
   const { user, logout } = useAuth();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const isLoggedIn = user && user.id !== 'guest';
@@ -29,6 +30,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNa
   const navLinks = [
     { id: 'catalog', label: 'Browse Catalog', icon: <Search className="w-3.5 h-3.5" /> },
     { id: 'my-rentals', label: 'My Rentals', icon: <ClipboardList className="w-3.5 h-3.5" /> },
+    { id: 'trust-score', label: 'Trust Score', icon: <Award className="w-3.5 h-3.5" /> },
     { id: 'return-flow', label: 'Return Guide', icon: <RotateCcw className="w-3.5 h-3.5" /> },
   ];
 
