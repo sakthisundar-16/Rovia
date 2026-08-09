@@ -38,22 +38,22 @@ const ROLE_META: Record<Role, { label: string; sub: string; icon: React.ReactNod
 
 const DEMO_CREDENTIALS: Record<Role, { email: string; password: string; name: string; phone: string; company: string }> = {
   customer: {
-    email: 'elena.vance@studio-noir.com',
-    password: 'GothicNoir2026!',
+    email: 'customer@rovia-demo.com',
+    password: 'Customer@2026!',
     name: 'Elena Vance',
     phone: '+91 98765 43210',
     company: 'Studio Noir Atelier',
   },
   renter: {
-    email: 'renter@urbangear-rentals.in',
-    password: 'UrbanGear2026!',
+    email: 'renter@rovia-demo.com',
+    password: 'Renter@2026!',
     name: 'Ravi Kapoor',
     phone: '+91 98300 22110',
     company: 'Urban Gear Rentals',
   },
   admin: {
-    email: 'marcus.sterling@rovia-ops.com',
-    password: 'RoviaOps2026!',
+    email: 'admin@rovia-demo.com',
+    password: 'Admin@2026!',
     name: 'Marcus Sterling',
     phone: '+91 99000 11223',
     company: 'ROVIA Operations HQ',
@@ -91,7 +91,7 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     setCompany(creds.company);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { [key: string]: string } = {};
 
@@ -114,10 +114,11 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
     setErrors({});
     const roleLabel = role === 'customer' ? 'Customer' : role === 'renter' ? 'Renter' : 'Admin';
-    login(email, role);
+    // Pass password so AuthContext can attempt real backend login
+    await login(email, role, password);
     showToast(
       isSignUp ? 'Account & Profile Created!' : `Welcome Back, ${roleLabel}!`,
-      `Logged in as ${name} (${meta.label} ${meta.sub})`,
+      `Logged in as ${name || email} (${meta.label} ${meta.sub})`,
       'success'
     );
     onSuccess(role);

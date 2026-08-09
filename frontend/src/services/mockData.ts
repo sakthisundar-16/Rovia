@@ -85,14 +85,14 @@ export interface Order {
   depositAmount: number;
   taxAmount: number;
   totalAmount: number;
-  status: 'Active' | 'Upcoming' | 'Past' | 'Overdue';
-  depositStatus: 'Held' | 'Refunded' | 'Partially Deducted';
+  status: 'Active' | 'Upcoming' | 'Past' | 'Overdue' | 'Pending Approval' | 'Pending Return Inspection' | 'Return Requested' | 'Returning' | 'Completed' | 'Cancelled';
+  depositStatus: 'Held' | 'Refunded' | 'Partially Deducted' | 'Deducted';
   deductionAmount?: number;
   deductionReason?: string;
   daysOverdue?: number;
   estimatedPenalty?: number;
   timeline: OrderTimeline[];
-  pickupMethod: 'Delivery' | 'Store Pickup';
+  pickupMethod: 'Delivery' | 'Store Pickup' | 'In-Store Pickup';
 }
 
 export interface DepositLedger {

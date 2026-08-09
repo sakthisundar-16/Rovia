@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Check, Download, ShieldCheck, Clock, FileText, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { InvoicePreviewModal } from '../../components/common/InvoicePreviewModal';
-import { INITIAL_ORDERS, Order } from '../../services/mockData';
+import { Order } from '../../services/mockData';
+import { api } from '../../services/api';
 
 interface OrderDetailProps {
   orderId?: string;
@@ -12,8 +13,76 @@ interface OrderDetailProps {
 }
 
 export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate }) => {
-  const order = INITIAL_ORDERS.find((o) => o.id === orderId || o.orderNumber === orderId) || INITIAL_ORDERS[0];
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
+  const loadSingleOrder = () => {
+    api.getOrders().then((allOrders) => {
+      const found = orderId
+        ? allOrders.find((o) => o.id === orderId || o.orderNumber === orderId)
+        : allOrders[0];
+      setOrder(found ?? null);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    loadSingleOrder();
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('rovia_orders_channel');
+      channel.onmessage = () => loadSingleOrder();
+    } catch {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'rovia_orders' || !e.key) loadSingleOrder();
+    };
+    const handleCustomSync = () => loadSingleOrder();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('rovia_order_updated', handleCustomSync);
+
+    const interval = setInterval(loadSingleOrder, 2000);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('rovia_order_updated', handleCustomSync);
+      clearInterval(interval);
+    };
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center py-32">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-2 border-[#988686] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-[#988686]">Loading order details…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="w-full space-y-4 page-transition pb-16">
+        <button
+          onClick={() => onNavigate('my-rentals')}
+          className="flex items-center gap-2 text-xs font-semibold text-[#988686] hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to My Rentals
+        </button>
+        <div className="text-center py-20">
+          <AlertCircle className="w-12 h-12 text-[#988686] mx-auto mb-4" />
+          <h3 className="font-heading text-xl font-bold text-[#000000] dark:text-white mb-2">Order Not Found</h3>
+          <p className="text-sm text-[#988686]">This order may have been removed or does not exist.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-8 page-transition pb-16">
@@ -48,7 +117,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate })
             </h3>
 
             <div className="relative pl-6 border-l-2 border-[#988686]/30 space-y-8">
-              {order.timeline.map((step, idx) => (
+              {(order.timeline ?? []).map((step, idx) => (
                 <div key={idx} className="relative group">
                   <div
                     className={`absolute -left-[31px] top-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
@@ -69,6 +138,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate })
                   </div>
                 </div>
               ))}
+
+              {/* If no timeline yet, show a minimal placeholder */}
+              {(!order.timeline || order.timeline.length === 0) && (
+                <div className="text-xs text-[#988686] italic">Timeline updates will appear here as your rental progresses.</div>
+              )}
             </div>
           </Card>
         </div>
@@ -99,7 +173,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate })
                 </div>
               ) : (
                 <div className="flex justify-between text-[#5E7A63]">
-                  <span>Damage & Late Deductions:</span>
+                  <span>Damage &amp; Late Deductions:</span>
                   <span className="font-mono font-bold">₹0 (Zero Deduction)</span>
                 </div>
               )}
@@ -123,6 +197,32 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate })
               <div>
                 <h4 className="font-bold text-sm text-[#000000] dark:text-white">{order.productName}</h4>
                 <p className="text-xs text-[#988686]">{order.variant}</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Rental Window Card */}
+          <Card className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-[#988686]/30 pb-2">
+              <Clock className="w-4 h-4 text-[#988686]" />
+              <h3 className="font-heading text-base font-bold text-[#000000] dark:text-white">Rental Window</h3>
+            </div>
+            <div className="text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[#988686]">Start:</span>
+                <span className="font-mono font-bold text-[#000000] dark:text-white">{order.rentalWindow.start}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#988686]">End:</span>
+                <span className="font-mono font-bold text-[#000000] dark:text-white">{order.rentalWindow.end}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#988686]">Duration:</span>
+                <span className="font-mono font-bold text-[#000000] dark:text-white">{order.rentalWindow.days} Days</span>
+              </div>
+              <div className="flex justify-between border-t border-[#988686]/30 pt-2 font-bold text-sm">
+                <span className="text-[#000000] dark:text-white">Total Amount:</span>
+                <span className="font-mono text-[#5E7A63]">₹{order.totalAmount.toLocaleString()}</span>
               </div>
             </div>
           </Card>

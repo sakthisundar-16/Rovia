@@ -28,7 +28,7 @@ class DamageReport(Base):
     creator = relationship("User")
 
 from enum import Enum as PyEnum
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON
 
 class OfflineActionStatus(PyEnum):
     PENDING = "PENDING"
@@ -43,7 +43,7 @@ class OfflineAction(Base):
     action_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     action_type: Mapped[str] = mapped_column(String(50)) # PICKUP, RETURN
     rental_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rentals.id", ondelete="CASCADE"), index=True)
-    payload: Mapped[dict] = mapped_column(JSONB)
+    payload: Mapped[dict] = mapped_column(JSON)
     
     status: Mapped[OfflineActionStatus] = mapped_column(SQLEnum(OfflineActionStatus), default=OfflineActionStatus.PENDING)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

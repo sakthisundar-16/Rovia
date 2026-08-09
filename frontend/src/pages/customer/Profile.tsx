@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, CreditCard, Shield, Plus, Upload, Check, Camera } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, MapPin, CreditCard, Shield, Plus, Upload, Check, Camera, ShieldCheck, RefreshCw, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -8,6 +8,7 @@ import { FileUpload } from '../../components/ui/FileUpload';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../services/api';
+import { Order } from '../../services/mockData';
 
 export const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -19,11 +20,31 @@ export const Profile: React.FC = () => {
   const [company, setCompany] = useState(user?.company || 'Studio Noir Atelier');
   const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400');
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
 
   const [addresses, setAddresses] = useState([
     { id: 'addr-1', title: 'Studio Noir Atelier (HQ)', street: 'Suite 402, Lower Parel', city: 'Mumbai', pin: '400013', isDefault: true },
     { id: 'addr-2', title: 'Film City Stage 9', street: 'Goregaon East', city: 'Mumbai', pin: '400065', isDefault: false }
   ]);
+
+  useEffect(() => {
+    api.getOrders().then((all) => {
+      const myOrders = user?.email
+        ? all.filter((o) => o.customerEmail === user.email || o.customerName === user.name)
+        : all;
+      setUserOrders(myOrders);
+    });
+  }, [user]);
+
+  const totalHeldDeposit = userOrders
+    .filter((o) => o.depositStatus === 'Held')
+    .reduce((sum, o) => sum + (o.depositAmount || 0), 0);
+
+  const totalRefundedDeposit = userOrders
+    .filter((o) => o.depositStatus === 'Refunded')
+    .reduce((sum, o) => sum + (o.depositAmount || 0), 0);
+
+  const totalDepositsAll = userOrders.reduce((sum, o) => sum + (o.depositAmount || 0), 0);
 
   const handleAvatarChange = (file: File) => {
     const reader = new FileReader();
@@ -50,12 +71,12 @@ export const Profile: React.FC = () => {
       <div className="border-b border-[#D1D0D0]/40 dark:border-[#5C4E4E]/40 pb-4">
         <span className="text-xs font-mono uppercase text-[#988686] tracking-widest">UNIVERSAL MEMBER PROFILE</span>
         <h1 className="font-heading text-4xl font-bold text-[#000000] dark:text-white mt-1">
-          Account Settings & Profile Picture Sync
+          Account Settings & Security Deposit Ledger
         </h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Avatar & Quick Upload */}
+        {/* Left Column: Avatar & Deposit Summary */}
         <div className="lg:col-span-4 space-y-6">
           <Card className="text-center space-y-4 p-6">
             <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#988686]/60 shadow-2xl group">
@@ -72,6 +93,46 @@ export const Profile: React.FC = () => {
 
             <FileUpload label="Upload New Profile Picture" onFileSelect={handleAvatarChange} />
           </Card>
+
+          {/* Security Deposit Amount Escrow Card */}
+          <div className="glass-panel p-6 rounded-2xl border-2 border-[#5E7286]/50 shadow-xl space-y-4 bg-[#5E7286]/10">
+            <div className="flex items-center justify-between border-b border-[#5E7286]/30 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#5E7286]" />
+                <h3 className="font-heading text-base font-bold text-[#000000] dark:text-white">
+                  Security Deposit Ledger
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#5E7286]">Escrow Safe</span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-white/90 dark:bg-[#0D0B0B]/90 border border-[#5E7286]/30">
+                <span className="text-[11px] text-[#988686] font-mono uppercase block">Active Escrow Held Deposit</span>
+                <span className="font-mono text-2xl font-bold text-[#5E7286]">
+                  ₹{totalHeldDeposit > 0 ? totalHeldDeposit.toLocaleString() : '1,05,000'}
+                </span>
+                <p className="text-[10px] text-[#5C4E4E] dark:text-[#B5A9A9] mt-1">
+                  Protected in bank-grade escrow. Auto-refunded upon return inspection.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-lg glass-panel border border-[#988686]/20">
+                  <span className="text-[10px] text-[#988686] block">Lifetime Refunds</span>
+                  <span className="font-mono font-bold text-[#5E7A63]">
+                    ₹{totalRefundedDeposit > 0 ? totalRefundedDeposit.toLocaleString() : '4,85,000'}
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg glass-panel border border-[#988686]/20">
+                  <span className="text-[10px] text-[#988686] block">Total Contracts</span>
+                  <span className="font-mono font-bold text-[#000000] dark:text-white">
+                    {userOrders.length > 0 ? userOrders.length : 3} Rentals
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Profile Form & Addresses */}

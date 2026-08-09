@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Search, Bell, Building2, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Bell, Building2, ChevronDown, QrCode, CheckCircle2 } from 'lucide-react';
 import { useAuth, Role } from '../../context/AuthContext';
+import { BarcodeScannerModal } from '../common/BarcodeScannerModal';
+import { api } from '../../services/api';
+import { Order } from '../../services/mockData';
 
 interface AdminTopbarProps {
   title?: string;
@@ -12,6 +15,20 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
   const { user } = useAuth();
   const [branch, setBranch] = useState('Mumbai HQ Main Atelier');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    // Fetch pending orders for notifications
+    api.getOrders().then(allOrders => {
+      const myPending = allOrders.filter(
+        o => o.status === 'Pending Approval' && (mode === 'admin' || o.renterId === user?.id)
+      );
+      setPendingOrders(myPending);
+    });
+  }, [user, mode]);
+
+  const pendingOrdersCount = pendingOrders.length;
 
   const roleLabel = mode === 'admin' ? 'Platform Admin' : 'Renter Ops Manager';
 
@@ -40,8 +57,18 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
 
       {/* Right Controls */}
       <div className="flex items-center gap-4">
+        {/* Quick QR Scanner Button */}
+        <button
+          onClick={() => setShowQrModal(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] text-white text-xs font-bold shadow-warm-sm hover:bg-[#988686] transition-all"
+          title="Scan Customer QR Code to Approve Rental"
+        >
+          <QrCode className="w-4 h-4" />
+          <span className="hidden sm:inline">Scan Customer QR</span>
+        </button>
+
         {/* Branch Switcher */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg glass-panel text-xs text-[#000000]">
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg glass-panel text-xs text-[#000000]">
           <Building2 className="w-3.5 h-3.5 text-[#988686]" />
           <select
             value={branch}
@@ -61,26 +88,44 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
             className="relative p-2 rounded-lg glass-panel hover:bg-[#988686]/20 transition-colors text-[#988686]"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#A0524E] animate-ping" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#A0524E]" />
+            {pendingOrdersCount > 0 && (
+              <>
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#5E7A63] animate-ping" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#5E7A63]" />
+              </>
+            )}
           </button>
 
           {/* Notifications Dropdown */}
           {notificationsOpen && (
             <div className="absolute right-0 mt-2 w-80 glass-panel rounded-xl border border-[#988686]/30 shadow-2xl p-4 z-50 text-xs animate-fadeIn">
               <div className="flex items-center justify-between border-b border-[#5C4E4E]/20 pb-2 mb-3">
-                <span className="font-bold text-[#000000] uppercase tracking-wider">Ops Alerts (2)</span>
+                <span className="font-bold text-[#000000] uppercase tracking-wider">Renter Notifications ({pendingOrdersCount})</span>
                 <span className="text-[10px] text-[#988686]">Mark all read</span>
               </div>
-              <div className="flex flex-col gap-2.5">
-                <div className="p-2.5 rounded bg-[#A0524E]/15 border border-[#A0524E]/30">
-                  <p className="font-bold text-[#A0524E]">Overdue Rental Alert</p>
-                  <p className="text-[11px] text-[#5C4E4E] mt-0.5">Order ROV-2026-879 is 3 days overdue (Karan Mehta).</p>
-                </div>
-                <div className="p-2.5 rounded bg-[#B08A4E]/15 border border-[#B08A4E]/30">
-                  <p className="font-bold text-[#B08A4E]">Upcoming Pickup Today</p>
-                  <p className="text-[11px] text-[#5C4E4E] mt-0.5">Hasselblad X2D 100C due for pickup at 14:00.</p>
-                </div>
+              <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto">
+                {pendingOrders.length === 0 ? (
+                  <p className="text-center text-[#988686] py-4">No pending rental requests right now.</p>
+                ) : (
+                  pendingOrders.map(order => (
+                    <div
+                      key={order.id}
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        setShowQrModal(true);
+                      }}
+                      className="p-2.5 rounded bg-[#5E7A63]/15 border border-[#5E7A63]/30 cursor-pointer hover:bg-[#5E7A63]/25 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-[#5E7A63]">New Rental Request!</p>
+                        <span className="text-[9px] font-bold text-[#5E7A63] bg-white/80 px-1.5 py-0.5 rounded">Scan QR</span>
+                      </div>
+                      <p className="text-[11px] text-[#5C4E4E] mt-0.5">{order.customerName} requested {order.productName}. Tap to scan QR & approve.</p>
+                    </div>
+                  ))
+                )}
+                
+                {/* Keep a sample overdue notification just for aesthetics if wanted, or we could filter overdue dynamically too */}
               </div>
             </div>
           )}
@@ -106,6 +151,12 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
           </div>
         </button>
       </div>
+
+      <BarcodeScannerModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        onScanSuccess={() => onNavigate('orders')}
+      />
     </header>
   );
 };

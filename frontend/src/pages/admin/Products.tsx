@@ -98,7 +98,7 @@ export const Products: React.FC = () => {
     });
 
     setProducts((prev) => [created, ...prev]);
-    showToast('Universal Rental SKU Created!', `${name} added to live catalog & inventory.`, 'success');
+    showToast('Universal Rental SKU Created!', `${name} added to live catalog & persistent storage.`, 'success');
     setShowAddModal(false);
     
     // Reset Form
@@ -123,7 +123,7 @@ export const Products: React.FC = () => {
     setEditDescription(product.description);
   };
 
-  const handleSaveEditProduct = (e: React.FormEvent) => {
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
 
@@ -142,8 +142,9 @@ export const Products: React.FC = () => {
       description: editDescription,
     };
 
+    await api.updateProduct(editingProduct.id, updated);
     setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updated : p)));
-    showToast('Product SKU Updated!', `${editName} changes saved successfully.`, 'success');
+    showToast('Product SKU Updated!', `${editName} changes saved persistently.`, 'success');
     setEditingProduct(null);
   };
 

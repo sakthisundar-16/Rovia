@@ -22,6 +22,24 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    // Simple deterministic QR Code SVG for printable document
+    const qrCodeSvg = `
+      <svg width="90" height="90" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="background:#fff; padding:4px; border:1px solid #111;">
+        <rect width="100" height="100" fill="#ffffff" />
+        <rect x="10" y="10" width="30" height="30" fill="#000000" />
+        <rect x="15" y="15" width="20" height="20" fill="#ffffff" />
+        <rect x="20" y="20" width="10" height="10" fill="#000000" />
+        <rect x="60" y="10" width="30" height="30" fill="#000000" />
+        <rect x="65" y="15" width="20" height="20" fill="#ffffff" />
+        <rect x="70" y="20" width="10" height="10" fill="#000000" />
+        <rect x="10" y="60" width="30" height="30" fill="#000000" />
+        <rect x="15" y="65" width="20" height="20" fill="#ffffff" />
+        <rect x="20" y="70" width="10" height="10" fill="#000000" />
+        <rect x="50" y="50" width="15" height="15" fill="#000000" />
+        <rect x="70" y="70" width="20" height="20" fill="#000000" />
+      </svg>
+    `;
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -42,6 +60,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
             .grand-total { font-size: 18px; font-weight: bold; border-top: 2px solid #111; padding-top: 10px; margin-top: 10px; }
             .footer { border-top: 1px solid #ddd; padding-top: 20px; margin-top: 40px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #666; }
+            .qr-box { text-align: center; border: 1px solid #ccc; padding: 10px; border-radius: 8px; font-size: 10px; }
             @media print {
               body { padding: 0; }
             }
@@ -98,6 +117,18 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
           <div class="box">
             <strong>🛡️ 100% REFUNDABLE SECURITY DEPOSIT GUARANTEE</strong><br/>
             Security Deposit of ₹${order.depositAmount.toLocaleString()} is held securely and fully refunded to the original payment source upon on-time return inspection.
+          </div>
+
+          <!-- Embedded QR Code for Renter Verification -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#fafafa; border:1px solid #ddd; padding:15px; border-radius:8px; margin:20px 0;">
+            <div class="qr-box">
+              ${qrCodeSvg}
+              <div style="margin-top:4px; font-weight:bold; font-family:monospace;">${order.orderNumber}</div>
+            </div>
+            <div style="font-size:11px; color:#444; max-width:500px;">
+              <strong>RENTAL CONTRACT VERIFICATION QR CODE</strong><br/>
+              Present this QR code to the Renter upon equipment pickup or store collection. The Renter will scan this QR code to verify contract details, record inspection, and activate your rental.
+            </div>
           </div>
 
           <div class="totals">

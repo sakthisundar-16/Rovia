@@ -81,15 +81,17 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
             )}
           </button>
 
-          {/* Sign In */}
-          <button
-            onClick={() => onNavigate('auth')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] hover:bg-[#3D3333] text-white text-xs font-semibold shadow-warm-sm transition-all"
-            title="Sign in as Customer, Renter or Admin"
-          >
-            <LogIn className="w-3.5 h-3.5 text-[#988686]" />
-            <span>Sign In</span>
-          </button>
+          {/* Sign In (Hidden if logged in) */}
+          {(!user || user.id === 'guest') && (
+            <button
+              onClick={() => onNavigate('auth')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] hover:bg-[#3D3333] text-white text-xs font-semibold shadow-warm-sm transition-all"
+              title="Sign in as Customer, Renter or Admin"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#988686]" />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* User Account / Auth */}
           <button
@@ -104,14 +106,16 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
             <span className="truncate max-w-[100px]">{user?.name || 'Account'}</span>
           </button>
 
-          {/* Portal Switcher Button */}
-          <button
-            onClick={() => switchMode('admin')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5C4E4E] hover:bg-[#3D3333] text-white text-xs font-semibold shadow-warm-sm transition-all"
-          >
-            <Shield className="w-3.5 h-3.5 text-[#988686]" />
-            <span>Admin Ops Console</span>
-          </button>
+          {/* Portal Switcher Button (Hidden for Customers) */}
+          {(user?.role === 'admin' || user?.role === 'renter') && (
+            <button
+              onClick={() => switchMode(user.role)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5C4E4E] hover:bg-[#3D3333] text-white text-xs font-semibold shadow-warm-sm transition-all"
+            >
+              <Shield className="w-3.5 h-3.5 text-[#988686]" />
+              <span>Admin Ops Console</span>
+            </button>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -141,15 +145,17 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
             </button>
           ))}
           <div className="flex items-center justify-between pt-2">
-            <button
-              onClick={() => {
-                onNavigate('auth');
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center gap-2 text-xs font-semibold text-[#000000]"
-            >
-              <LogIn className="w-4 h-4 text-[#988686]" /> Sign In
-            </button>
+            {(!user || user.id === 'guest') && (
+              <button
+                onClick={() => {
+                  onNavigate('auth');
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 text-xs font-semibold text-[#000000]"
+              >
+                <LogIn className="w-4 h-4 text-[#988686]" /> Sign In
+              </button>
+            )}
             <button
               onClick={() => {
                 onNavigate('cart');
@@ -159,12 +165,14 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
             >
               <ShoppingBag className="w-4 h-4" /> Cart ({cartCount})
             </button>
-            <button
-              onClick={() => switchMode('admin')}
-              className="px-3 py-1.5 rounded bg-[#5C4E4E] text-white text-xs font-semibold"
-            >
-              Admin Console
-            </button>
+            {(user?.role === 'admin' || user?.role === 'renter') && (
+              <button
+                onClick={() => switchMode(user.role)}
+                className="px-3 py-1.5 rounded bg-[#5C4E4E] text-white text-xs font-semibold"
+              >
+                Admin Console
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -7,9 +7,12 @@ import { Card } from '../../components/ui/Card';
 import { InvoicePreviewModal } from '../../components/common/InvoicePreviewModal';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
+import { useAuth } from '../../context/AuthContext';
 import { Order } from '../../services/mockData';
+import { api } from '../../services/api';
 
 export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNavigate }) => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryType, setDeliveryType] = useState<'Ship' | 'Store'>('Ship');
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Card'>('UPI');
@@ -26,49 +29,47 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
     { id: 3, label: 'Confirmation', description: 'Order contract & receipt' },
   ];
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      const newOrder: Order = {
-        id: 'ord-' + Date.now(),
-        renterId: 'rnt-101',
-        renterName: 'ROVIA Atelier & Cinema Rigs',
-        orderNumber: 'ROV-2026-' + Math.floor(100 + Math.random() * 900),
-        customerName: 'Elena Vance',
-        customerEmail: 'elena.vance@studio-noir.com',
-        customerPhone: '+91 98765 43210',
-        customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-        productName: items[0]?.name || 'Hasselblad X2D 100C Package',
-        productImage: items[0]?.image || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600',
-        variant: items[0]?.variant || 'Matte Obsidian',
-        rentalWindow: {
-          start: items[0]?.startDate || '2026-08-10',
-          end: items[0]?.endDate || '2026-08-13',
-          days: items[0]?.days || 3,
-        },
-        rentalFee: rentalSubtotal,
-        depositAmount: depositTotal,
-        taxAmount: taxes,
-        totalAmount: grandTotal,
-        status: 'Active',
-        depositStatus: 'Held',
-        pickupMethod: deliveryType === 'Ship' ? 'Delivery' : 'Store Pickup',
-        timeline: [
-          { stage: 'Order Placed', timestamp: 'Just now', completed: true, notes: 'Payment & Deposit authorized' },
-          { stage: 'Quality Inspection', timestamp: 'Pending', completed: false },
-          { stage: 'Dispatched / Picked Up', timestamp: 'Pending', completed: false },
-          { stage: 'In Rental Window', timestamp: 'Pending', completed: false },
-          { stage: 'Return & Inspection', timestamp: 'Pending', completed: false },
-          { stage: 'Deposit Refunded', timestamp: 'Pending', completed: false }
-        ]
-      };
+    const newOrderData: Omit<Order, 'id'> = {
+      renterId: 'rnt-101',
+      renterName: 'ROVIA Atelier & Cinema Rigs',
+      orderNumber: 'ROV-2026-' + Math.floor(100 + Math.random() * 900),
+      customerName: user?.name || 'Elena Vance',
+      customerEmail: user?.email || 'customer@rovia-demo.com',
+      customerPhone: '+91 98765 43210',
+      customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+      productName: items[0]?.name || 'Hasselblad X2D 100C Package',
+      productImage: items[0]?.image || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600',
+      variant: items[0]?.variant || 'Matte Obsidian',
+      rentalWindow: {
+        start: items[0]?.startDate || '2026-08-10',
+        end: items[0]?.endDate || '2026-08-13',
+        days: items[0]?.days || 3,
+      },
+      rentalFee: rentalSubtotal,
+      depositAmount: depositTotal,
+      taxAmount: taxes,
+      totalAmount: grandTotal,
+      status: 'Pending Approval',
+      depositStatus: 'Held',
+      pickupMethod: deliveryType === 'Ship' ? 'Delivery' : 'Store Pickup',
+      timeline: [
+        { stage: 'Order Placed', timestamp: 'Just now', completed: true, notes: 'Payment & Deposit authorized' },
+        { stage: 'Renter QR Verification', timestamp: 'Pending', completed: false, notes: 'Awaiting Renter QR approval' },
+        { stage: 'Dispatched / Picked Up', timestamp: 'Pending', completed: false },
+        { stage: 'In Rental Window', timestamp: 'Pending', completed: false },
+        { stage: 'Return & Inspection', timestamp: 'Pending', completed: false },
+        { stage: 'Deposit Refunded', timestamp: 'Pending', completed: false }
+      ]
+    };
 
-      setCompletedOrder(newOrder);
-      setCurrentStep(3);
-      clearCart();
-      showToast('Order Confirmed!', `Order ${newOrder.orderNumber} successfully booked.`, 'success');
-    }, 1500);
+    const createdOrder = await api.createOrder(newOrderData);
+    setIsProcessing(false);
+    setCompletedOrder(createdOrder);
+    setCurrentStep(3);
+    clearCart();
+    showToast('Order Confirmed!', `Order ${createdOrder.orderNumber} sent to Renter for QR scan approval.`, 'success');
   };
 
   return (

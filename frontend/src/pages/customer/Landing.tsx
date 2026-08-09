@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ShieldCheck, Camera, Sparkles, Clock, Layers, Car, Wrench, Shirt, Laptop } from 'lucide-react';
+import { ArrowRight, Camera, Car, Wrench, Shirt } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -36,22 +36,20 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
             Reserve Hasselblad cameras, Caterpillar excavators, Vera Wang haute couture, Tesla Cybertrucks, and medical suites. Flexible rental windows with 100% refundable deposit protection.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          {/* Single CTA — Get Started → Auth */}
+          <div className="flex flex-col items-center justify-center gap-3 pt-4">
             <Button
               size="lg"
               variant="primary"
               rightIcon={<ArrowRight className="w-5 h-5" />}
-              onClick={() => onNavigate('catalog')}
+              onClick={() => onNavigate('auth')}
+              className="px-12 py-4 text-base font-bold mx-auto"
             >
-              Explore Universal Catalog
+              Get Started
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => onNavigate('return-flow')}
-            >
-              How Rentals Work
-            </Button>
+            <span className="text-[#988686] text-xs font-mono tracking-widest text-center">
+              Customer · Renter · Admin Portals
+            </span>
           </div>
 
           <div className="pt-8 border-t border-[#988686]/20 flex items-center justify-center gap-8 text-xs font-mono text-[#988686] uppercase tracking-widest">
@@ -76,25 +74,21 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card className="p-4 text-center cursor-pointer hover:border-[#988686]" onClick={() => onNavigate('catalog')}>
-            <Camera className="w-8 h-8 text-[#988686] mx-auto mb-2" />
-            <h3 className="font-bold text-xs text-[#000000] dark:text-white">Cameras & Cinema</h3>
-          </Card>
-
-          <Card className="p-4 text-center cursor-pointer hover:border-[#988686]" onClick={() => onNavigate('catalog')}>
-            <Wrench className="w-8 h-8 text-[#988686] mx-auto mb-2" />
-            <h3 className="font-bold text-xs text-[#000000] dark:text-white">Heavy Machinery</h3>
-          </Card>
-
-          <Card className="p-4 text-center cursor-pointer hover:border-[#988686]" onClick={() => onNavigate('catalog')}>
-            <Shirt className="w-8 h-8 text-[#988686] mx-auto mb-2" />
-            <h3 className="font-bold text-xs text-[#000000] dark:text-white">Designer Fashion</h3>
-          </Card>
-
-          <Card className="p-4 text-center cursor-pointer hover:border-[#988686]" onClick={() => onNavigate('catalog')}>
-            <Car className="w-8 h-8 text-[#988686] mx-auto mb-2" />
-            <h3 className="font-bold text-xs text-[#000000] dark:text-white">Vehicles & Mobility</h3>
-          </Card>
+          {[
+            { icon: <Camera className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Cameras & Cinema' },
+            { icon: <Wrench className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Heavy Machinery' },
+            { icon: <Shirt className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Designer Fashion' },
+            { icon: <Car className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Vehicles & Mobility' },
+          ].map((cat) => (
+            <Card
+              key={cat.label}
+              className="p-4 text-center cursor-pointer hover:border-[#988686] transition-all"
+              onClick={() => onNavigate('auth')}
+            >
+              {cat.icon}
+              <h3 className="font-bold text-xs text-[#000000] dark:text-white">{cat.label}</h3>
+            </Card>
+          ))}
         </div>
       </section>
 
@@ -107,8 +101,8 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
               Featured Rental Items
             </h2>
           </div>
-          <Button variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={() => onNavigate('catalog')}>
-            View All Categories
+          <Button variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={() => onNavigate('auth')}>
+            Sign In to Browse All
           </Button>
         </div>
 
@@ -117,7 +111,7 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
             <Card
               key={product.id}
               className="group cursor-pointer flex flex-col justify-between"
-              onClick={() => onNavigate('product-detail', product.id)}
+              onClick={() => onNavigate('auth')}
             >
               <div className="space-y-4">
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/40">

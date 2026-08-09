@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authApi, clearTokens } from '../services/apiClient';
 
 export type Role = 'customer' | 'renter' | 'admin';
 
@@ -17,7 +18,7 @@ interface AuthContextType {
   user: UserProfile | null;
   mode: Role;
   switchMode: (mode: Role) => void;
-  login: (email: string, role: Role) => void;
+  login: (email: string, role: Role, password?: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
 }
@@ -56,34 +57,96 @@ const DEMO_USERS: Record<Role, UserProfile> = {
   }
 };
 
+const SESSION_KEY = 'rovia_session';
+
+const loadSession = (): { user: UserProfile; mode: Role } | null => {
+  try {
+    const stored = localStorage.getItem(SESSION_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.user && parsed?.mode) return parsed;
+    }
+  } catch (_) {}
+  return null;
+};
+
+const saveSession = (user: UserProfile, mode: Role) => {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ user, mode }));
+  } catch (_) {}
+};
+
+const clearSession = () => {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch (_) {}
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mode, setMode] = useState<Role>('customer');
-  const [user, setUser] = useState<UserProfile>(DEMO_USERS.customer);
+  const session = loadSession();
+  const [mode, setMode] = useState<Role>(session?.mode ?? 'customer');
+  const [user, setUser] = useState<UserProfile>(session?.user ?? DEMO_USERS.customer);
+
+  // Persist session on every change
+  useEffect(() => {
+    if (user && user.id !== 'guest') {
+      saveSession(user, mode);
+    }
+  }, [user, mode]);
 
   const switchMode = (newMode: Role) => {
+    const newUser = DEMO_USERS[newMode];
     setMode(newMode);
-    setUser(DEMO_USERS[newMode]);
+    setUser(newUser);
   };
 
-  const login = (email: string, role: Role) => {
-    switchMode(role);
+  const login = async (email: string, role: Role, password?: string) => {
+    // Try real backend login if password provided
+    if (password) {
+      const tokens = await authApi.login(email, password);
+      if (tokens) {
+        // Fetch real user info from backend
+        const me = await authApi.me();
+        if (me) {
+          const backendRole: Role =
+            me.role === 'ADMIN' ? 'admin'
+            : me.role === 'OPERATIONS' ? 'renter'
+            : 'customer';
+          const loggedInUser: UserProfile = {
+            id: String(me.id),
+            name: `${me.first_name} ${me.last_name}`,
+            email: me.email,
+            phone: '',
+            avatar: '',
+            role: backendRole,
+          };
+          setMode(backendRole);
+          setUser(loggedInUser);
+          saveSession(loggedInUser, backendRole);
+          return;
+        }
+      }
+    }
+    // Fallback: demo login (role-based, no real backend auth)
+    const baseUser = DEMO_USERS[role];
+    const loggedInUser: UserProfile = { ...baseUser, email };
+    setMode(role);
+    setUser(loggedInUser);
+    saveSession(loggedInUser, role);
   };
 
   const logout = () => {
-    setUser({
-      id: 'guest',
-      name: 'Guest User',
-      email: '',
-      phone: '',
-      avatar: '',
-      role: mode
-    });
+    clearSession();
+    clearTokens();
+    setMode('customer');
+    setUser(DEMO_USERS.customer);
   };
 
   const updateProfile = (data: Partial<UserProfile>) => {
     setUser(prev => {
       if (!prev) return prev;
       const updated = { ...prev, ...data };
+      saveSession(updated, mode);
       return updated;
     });
   };

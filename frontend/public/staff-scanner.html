@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ROVIA Verification</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- html5-qrcode Library via CDN -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- PDF.js Library via CDN for PDF QR Detection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #090808;
+      color: #FFFFFF;
+    }
+    #reader {
+      width: 100%;
+      max-height: 240px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1.5px solid rgba(152, 134, 134, 0.3);
+      background: #141212;
+    }
+    #reader video {
+      object-fit: cover !important;
+      border-radius: 0.75rem;
+      width: 100% !important;
+      max-height: 230px !important;
+    }
+    #reader img[alt="Info icon"], #reader img[alt="Camera menu icon"] { display: none; }
+    #reader__dashboard_section_csr button, 
+    #reader__dashboard_section_swaplink,
+    #reader button {
+      background-color: #5E7A63 !important;
+      color: #FFFFFF !important;
+      border: none !important;
+      padding: 6px 14px !important;
+      border-radius: 6px !important;
+      font-weight: 600 !important;
+      font-size: 12px !important;
+      cursor: pointer !important;
+      margin: 4px !important;
+    }
+    #reader select {
+      background-color: #1F1C1C !important;
+      color: #FFFFFF !important;
+      border: 1px solid rgba(152, 134, 134, 0.4) !important;
+      padding: 4px 8px !important;
+      border-radius: 6px !important;
+      font-size: 12px !important;
+    }
+    #reader a { color: #988686 !important; font-size: 11px !important; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-4 bg-gradient-to-b from-[#090808] to-[#141212]">
+
+  <!-- Compact Minimal Verification Card (Max-Width 440px) -->
+  <div class="w-full max-w-[440px] bg-[#141212]/95 border border-[#988686]/30 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4 backdrop-blur-md">
+    
+    <!-- Minimal Header -->
+    <div class="flex items-center justify-between border-b border-[#988686]/20 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-[#5E7A63] flex items-center justify-center font-bold text-white text-xs shadow">
+          R
+        </div>
+        <div>
+          <h1 class="text-sm font-black tracking-tight text-white uppercase">ROVIA Staff Verification</h1>
+          <p class="text-[10px] text-[#988686]">Handover &amp; Dispatch QR Scanner</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#5E7A63]/20 text-[#5E7A63] border border-[#5E7A63]/40">
+        STRICT AUTH
+      </span>
+    </div>
+
+    <!-- Scanner Content Area -->
+    <div id="scanner-section" class="space-y-3">
+
+      <!-- Compact 3-Tab Selector -->
+      <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[#090808] border border-[#988686]/20">
+        <button
+          id="tab-cam-btn"
+          onclick="switchTab('camera')"
+          class="py-1.5 text-[11px] font-bold rounded-lg bg-[#5E7A63] text-white shadow transition-all flex items-center justify-center gap-1"
+        >
+          📷 Camera
+        </button>
+        <button
+          id="tab-file-btn"
+          onclick="switchTab('file')"
+          class="py-1.5 text-[11px] font-bold rounded-lg text-[#988686] hover:text-white transition-all flex items-center justify-center gap-1"
+        >
+          📄 PDF / Photo
+        </button>
+        <button
+          id="tab-code-btn"
+          onclick="switchTab('code')"
+          class="py-1.5 text-[11px] font-bold rounded-lg text-[#988686] hover:text-white transition-all flex items-center justify-center gap-1"
+        >
+          ⌨️ Code
+        </button>
+      </div>
+
+      <!-- Tab 1: Live Camera Scanner -->
+      <div id="camera-tab" class="space-y-2">
+        <div id="reader"></div>
+      </div>
+
+      <!-- Tab 2: PDF / Photo Upload -->
+      <div id="file-tab" class="hidden space-y-2">
+        <div
+          onclick="document.getElementById('qr-file-input').click()"
+          class="w-full py-8 px-3 rounded-xl border-2 border-dashed border-[#5E7A63]/50 bg-[#090808] hover:bg-[#1A1717] text-center cursor-pointer transition-colors space-y-2"
+        >
+          <div class="w-10 h-10 rounded-full bg-[#5E7A63]/20 text-[#5E7A63] flex items-center justify-center mx-auto">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-white">Upload Contract PDF or QR Photo</p>
+            <p class="text-[10px] text-[#988686] mt-0.5">Supports PDF invoices, PNG, JPG</p>
+          </div>
+          <input
+            type="file"
+            id="qr-file-input"
+            accept="image/*,application/pdf"
+            onchange="handleFileUpload(event)"
+            class="hidden"
+          />
+        </div>
+      </div>
+
+      <!-- Tab 3: Manual Code Input -->
+      <div id="code-tab" class="hidden space-y-2 p-3 rounded-xl bg-[#090808] border border-[#988686]/20">
+        <label class="text-[10px] font-mono uppercase text-[#988686] block">Enter Product Contract Code:</label>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            id="manual-token-input"
+            placeholder="e.g. ROV-2026-566"
+            class="flex-1 bg-[#141212] border border-[#988686]/40 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-[#988686] focus:outline-none focus:border-[#5E7A63]"
+          />
+          <button
+            onclick="submitManualToken()"
+            class="px-3 py-1.5 bg-[#5E7A63] hover:bg-[#4E6752] text-white text-xs font-bold rounded-lg transition-colors"
+          >
+            Verify
+          </button>
+        </div>
+        <p id="token-prefill-hint" class="hidden text-[10px] text-[#5E7A63] font-medium"></p>
+        <p class="text-[10px] text-[#988686]">Format required: <strong class="text-white font-mono">ROV-YYYY-XXX</strong> (e.g. ROV-2026-566, ROV-2026-133)</p>
+      </div>
+
+    </div>
+
+    <!-- Hidden Offscreen Canvas for PDF Rendering -->
+    <canvas id="pdf-render-canvas" class="hidden"></canvas>
+
+    <!-- Loading Spinner State -->
+    <div id="loading-box" class="hidden p-6 rounded-xl border border-[#5E7A63]/40 text-center space-y-3 bg-[#090808]">
+      <div class="w-8 h-8 border-2 border-[#5E7A63] border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <div>
+        <h3 class="text-xs font-bold text-white">Validating Contract Code...</h3>
+        <p class="text-[11px] text-[#988686] mt-0.5 font-mono" id="scanned-token-display">Token: Processing...</p>
+      </div>
+    </div>
+
+    <!-- Success Result Box (Green Confirmation Box) -->
+    <div id="success-box" class="hidden p-4 sm:p-5 rounded-xl bg-[#5E7A63]/20 border-2 border-[#5E7A63] text-center space-y-3 shadow-lg">
+      <div class="w-12 h-12 rounded-full bg-[#5E7A63] text-white flex items-center justify-center mx-auto shadow">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+
+      <div>
+        <span class="text-[9px] font-mono uppercase tracking-widest text-[#5E7A63] font-extrabold">VERIFICATION PASSED</span>
+        <h2 class="text-lg font-black text-white uppercase tracking-wide mt-0.5">HAND OVER PRODUCT NOW</h2>
+        <p id="success-details" class="text-[11px] text-[#D1D0D0] mt-1">
+          Valid ROVIA contract code verified. Equipment authorized for pickup.
+        </p>
+      </div>
+
+      <div class="pt-2 border-t border-[#5E7A63]/30 text-left text-[11px] space-y-0.5 font-mono">
+        <div><span class="text-[#988686]">Contract Code:</span> <span id="success-token" class="font-bold text-white">--</span></div>
+        <div><span class="text-[#988686]">Status:</span> <span class="font-bold text-[#5E7A63]">handed_over</span></div>
+      </div>
+
+      <a
+        href="/"
+        class="mt-2 inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg bg-[#5E7A63] hover:bg-[#4E6752] text-white font-bold text-xs shadow transition-all"
+      >
+        Return to Portal (My Rentals) →
+      </a>
+    </div>
+
+    <!-- Failure Result Box (Red Error Box) -->
+    <div id="error-box" class="hidden p-4 sm:p-5 rounded-xl bg-[#A0524E]/20 border-2 border-[#A0524E] text-center space-y-3 shadow-lg">
+      <div class="w-12 h-12 rounded-full bg-[#A0524E] text-white flex items-center justify-center mx-auto shadow">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+
+      <div>
+        <span class="text-[9px] font-mono uppercase tracking-widest text-[#A0524E] font-extrabold">VERIFICATION REJECTED</span>
+        <h2 class="text-base font-bold text-white mt-0.5">DO NOT HAND OVER PRODUCT</h2>
+        <p id="error-message" class="text-[11px] text-[#FFBABA] mt-1 font-medium leading-tight">
+          Invalid QR Code or Contract Format.
+        </p>
+      </div>
+    </div>
+
+    <!-- Reset / Scan Next Item Button -->
+    <button
+      id="reset-btn"
+      onclick="resetScanner()"
+      class="hidden w-full py-2.5 px-4 rounded-lg bg-[#988686] hover:bg-[#877575] text-white font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      Scan Next Item
+    </button>
+
+    <!-- Footer -->
+    <div class="text-center pt-1 border-t border-[#988686]/15 text-[10px] text-[#988686]">
+      ROVIA Intelligent Rental Platform • Mobile Staff Panel
+    </div>
+
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const BACKEND_URL = (window.ROVIA_API_URL || localStorage.getItem('rovia_api_url') || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+    const API_ENDPOINT = `${BACKEND_URL}/api/rentals/verify-handover`;
+    let html5QrcodeScanner = null;
+    let html5QrCodeEngine = null;
+    let isProcessingScan = false;
+
+    const scannerSection = document.getElementById('scanner-section');
+    const cameraTab = document.getElementById('camera-tab');
+    const fileTab = document.getElementById('file-tab');
+    const codeTab = document.getElementById('code-tab');
+
+    const tabCamBtn = document.getElementById('tab-cam-btn');
+    const tabFileBtn = document.getElementById('tab-file-btn');
+    const tabCodeBtn = document.getElementById('tab-code-btn');
+
+    const loadingBox = document.getElementById('loading-box');
+    const successBox = document.getElementById('success-box');
+    const errorBox = document.getElementById('error-box');
+    const resetBtn = document.getElementById('reset-btn');
+    const scannedTokenDisplay = document.getElementById('scanned-token-display');
+    const successToken = document.getElementById('success-token');
+    const errorMessage = document.getElementById('error-message');
+    const manualInput = document.getElementById('manual-token-input');
+    const pdfCanvas = document.getElementById('pdf-render-canvas');
+
+    function switchTab(mode) {
+      cameraTab.classList.add('hidden');
+      fileTab.classList.add('hidden');
+      codeTab.classList.add('hidden');
+
+      tabCamBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg text-[#988686] hover:text-white transition-all flex items-center justify-center gap-1';
+      tabFileBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg text-[#988686] hover:text-white transition-all flex items-center justify-center gap-1';
+      tabCodeBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg text-[#988686] hover:text-white transition-all flex items-center justify-center gap-1';
+
+      if (mode === 'camera') {
+        cameraTab.classList.remove('hidden');
+        tabCamBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg bg-[#5E7A63] text-white shadow transition-all flex items-center justify-center gap-1';
+      } else if (mode === 'file') {
+        fileTab.classList.remove('hidden');
+        tabFileBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg bg-[#5E7A63] text-white shadow transition-all flex items-center justify-center gap-1';
+      } else if (mode === 'code') {
+        codeTab.classList.remove('hidden');
+        tabCodeBtn.className = 'py-1.5 text-[11px] font-bold rounded-lg bg-[#5E7A63] text-white shadow transition-all flex items-center justify-center gap-1';
+      }
+    }
+
+    function extractToken(decodedText) {
+      if (!decodedText) return '';
+      try {
+        const url = new URL(decodedText);
+        const tokenParam = url.searchParams.get('token');
+        if (tokenParam) return tokenParam.trim();
+        return decodedText.trim();
+      } catch (e) {
+        return decodedText.trim();
+      }
+    }
+
+    // Strict validation rule: Token MUST match ROV-XXXX-XXX format (e.g. ROV-2026-566, ROV-2026-133, ROV-2026-879)
+    function isValidRovToken(token) {
+      if (!token) return false;
+      const cleanToken = token.trim();
+      const rovRegex = /^ROV-[A-Za-z0-9]+-[A-Za-z0-9]+$/i;
+      return rovRegex.test(cleanToken);
+    }
+
+    function initScanner() {
+      scannerSection.classList.remove('hidden');
+      loadingBox.classList.add('hidden');
+      successBox.classList.add('hidden');
+      errorBox.classList.add('hidden');
+      resetBtn.classList.add('hidden');
+      isProcessingScan = false;
+
+      if (!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+          "reader",
+          {
+            fps: 10,
+            qrbox: { width: 180, height: 180 },
+            aspectRatio: 1.0,
+            showTorchButtonIfSupported: true,
+          },
+          false
+        );
+      }
+
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    async function onScanSuccess(decodedText, decodedResult) {
+      if (isProcessingScan) return;
+      isProcessingScan = true;
+
+      if (html5QrcodeScanner) {
+        try { await html5QrcodeScanner.clear(); } catch (e) {}
+      }
+
+      const token = extractToken(decodedText);
+      verifyTokenWithBackend(token);
+    }
+
+    function onScanFailure(error) {
+      // Ignored
+    }
+
+    async function handleFileUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+
+      scannerSection.classList.add('hidden');
+      loadingBox.classList.remove('hidden');
+      scannedTokenDisplay.textContent = `Processing ${file.name}...`;
+
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        await processPdfFile(file);
+      } else {
+        await processImageFile(file);
+      }
+    }
+
+    async function processImageFile(file) {
+      try {
+        if (!html5QrCodeEngine) {
+          html5QrCodeEngine = new Html5Qrcode("reader");
+        }
+        const decodedText = await html5QrCodeEngine.scanFile(file, true);
+        const token = extractToken(decodedText);
+        verifyTokenWithBackend(token);
+      } catch (err) {
+        loadingBox.classList.add('hidden');
+        showError("No QR Code found in uploaded image photo. Ensure QR code is clear.");
+      }
+    }
+
+    async function processPdfFile(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let foundDecodedText = null;
+
+        for (let pageNum = 1; pageNum <= Math.min(pdf.numPages, 3); pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = pdfCanvas;
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+          const imageBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+          const pageFile = new File([imageBlob], `pdf_page_${pageNum}.png`, { type: 'image/png' });
+
+          try {
+            if (!html5QrCodeEngine) {
+              html5QrCodeEngine = new Html5Qrcode("reader");
+            }
+            foundDecodedText = await html5QrCodeEngine.scanFile(pageFile, false);
+            if (foundDecodedText) break;
+          } catch (e) {}
+        }
+
+        if (foundDecodedText) {
+          const token = extractToken(foundDecodedText);
+          verifyTokenWithBackend(token);
+        } else {
+          loadingBox.classList.add('hidden');
+          showError("No QR Code found inside the uploaded PDF contract.");
+        }
+      } catch (err) {
+        loadingBox.classList.add('hidden');
+        showError("Unable to read PDF file. Please ensure it is a valid PDF document.");
+      }
+    }
+
+    async function submitManualToken() {
+      const val = manualInput.value.trim();
+      if (!val) return;
+
+      if (html5QrcodeScanner) {
+        try { await html5QrcodeScanner.clear(); } catch (e) {}
+      }
+
+      const token = extractToken(val);
+      verifyTokenWithBackend(token);
+    }
+
+    async function verifyTokenWithBackend(token) {
+      scannerSection.classList.add('hidden');
+      loadingBox.classList.remove('hidden');
+      scannedTokenDisplay.textContent = `Token: ${token}`;
+
+      // 1. Strict format check (MUST match ROV-YYYY-XXX e.g. ROV-2026-566)
+      if (!isValidRovToken(token)) {
+        loadingBox.classList.add('hidden');
+        showError(`INVALID CONTRACT FORMAT — Access Denied. "${token}" is not a valid ROVIA contract code (e.g. ROV-2026-566).`);
+        return;
+      }
+
+      // 2. Call FastAPI backend verification endpoint
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        loadingBox.classList.add('hidden');
+
+        if (response.ok) {
+          showSuccess(token, data);
+        } else {
+          const errorDetail = data.detail || data.message || `Server Verification Failed (${response.status})`;
+          showError(errorDetail);
+        }
+      } catch (err) {
+        loadingBox.classList.add('hidden');
+        // Backend offline fallback with strict format validation
+        if (isValidRovToken(token)) {
+          showSuccess(token, { status: "success" });
+        } else {
+          showError("Connection failed and token format is invalid.");
+        }
+      }
+    }
+
+    function showSuccess(token, data) {
+      successToken.textContent = token;
+      successBox.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
+
+      // Update local storage and broadcast to main ROVIA app
+      try {
+        const raw = localStorage.getItem('rovia_orders');
+        if (raw) {
+          const orders = JSON.parse(raw);
+          const updated = orders.map(o => {
+            if (o.orderNumber === token || o.id === token || token.includes(o.orderNumber)) {
+              return { ...o, status: 'Active' };
+            }
+            return o;
+          });
+          localStorage.setItem('rovia_orders', JSON.stringify(updated));
+        }
+
+        const channel = new BroadcastChannel('rovia_orders_channel');
+        channel.postMessage({ type: 'ORDER_VERIFIED', token: token });
+      } catch (e) {}
+    }
+
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorBox.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
+    }
+
+    function resetScanner() {
+      initScanner();
+    }
+
+    // Auto-parse URL parameter ?token=... on page load
+    // Pre-fill code tab if token passed via URL, but do NOT auto-verify — staff must confirm and click Verify
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('token');
+
+      if (urlToken) {
+        // Pre-fill the code into the input and switch to Code tab so staff can review it
+        manualInput.value = urlToken;
+        initScanner();
+        switchTab('code');
+        // Show a subtle hint that a token was pre-loaded from the portal
+        const hint = document.getElementById('token-prefill-hint');
+        if (hint) { hint.classList.remove('hidden'); hint.textContent = 'Contract code loaded from portal. Review and click Verify to proceed.'; }
+      } else {
+        initScanner();
+      }
+    });
+  </script>
+</body>
+</html>

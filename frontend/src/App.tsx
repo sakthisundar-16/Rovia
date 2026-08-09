@@ -3,10 +3,11 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/ui/Toast';
 
-import { CustomerHeader } from './components/layout/CustomerHeader';
+// Navbars
+import { CustomerNavbar } from './components/layout/CustomerNavbar';
+import { RenterNavbar } from './components/layout/RenterNavbar';
+import { AdminNavbar } from './components/layout/AdminNavbar';
 import { CustomerFooter } from './components/layout/CustomerFooter';
-import { AdminSidebar } from './components/layout/AdminSidebar';
-import { AdminTopbar } from './components/layout/AdminTopbar';
 
 // Customer Pages
 import { Splash } from './pages/customer/Splash';
@@ -36,23 +37,6 @@ import { Customers } from './pages/admin/Customers';
 import { Reports } from './pages/admin/Reports';
 import { Settings } from './pages/admin/Settings';
 
-const ADMIN_TITLES: Record<string, string> = {
-  dashboard: 'Marketplace Operations Dashboard',
-  renters: 'Renter Onboarding & KYC Governance',
-  payouts: 'Renter Revenue Settlements & Payouts',
-  disputes: 'Marketplace Dispute Arbitration',
-  quotations: 'Quotation Templates',
-  orders: 'Rental Contracts & Orders',
-  'pickup-return': 'Pickup & Return Workflow',
-  deposits: 'Security Deposits Ledger',
-  'late-fees': 'Late Fee Engine',
-  products: 'Products & Inventory',
-  customers: 'Customer CRM',
-  reports: 'Marketplace Analytics',
-  settings: 'System Configuration',
-  profile: 'My Account Profile',
-};
-
 const MainAppContent: React.FC = () => {
   const { mode, switchMode } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
@@ -63,7 +47,7 @@ const MainAppContent: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>(undefined);
 
   const viewStorefront = () => {
-    setCustomerTab('landing');
+    setCustomerTab('catalog');
     switchMode('customer');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -83,27 +67,17 @@ const MainAppContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const isOps = mode === 'admin' || mode === 'renter';
-
+  // ── Splash ──────────────────────────────────────────────
   if (showSplash) {
     return <Splash onFinish={() => setShowSplash(false)} />;
   }
 
-  if (isOps) {
+  // ── ADMIN CONSOLE (dark navy navbar) ────────────────────
+  if (mode === 'admin') {
     return (
       <div className="min-h-screen flex antialiased">
-        <AdminSidebar
-          currentTab={adminTab}
-          onNavigate={handleAdminNavigate}
-          onViewStorefront={viewStorefront}
-          mode={mode}
-        />
+        <AdminNavbar currentTab={adminTab} onNavigate={handleAdminNavigate} />
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          <AdminTopbar
-            title={ADMIN_TITLES[adminTab] ?? 'Operations Console'}
-            mode={mode}
-            onNavigate={handleAdminNavigate}
-          />
           <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
             {adminTab === 'renters' && <Renters />}
@@ -125,13 +99,60 @@ const MainAppContent: React.FC = () => {
     );
   }
 
+  // ── RENTER CONSOLE (dark charcoal amber navbar) ──────────
+  if (mode === 'renter') {
+    return (
+      <div className="min-h-screen flex antialiased">
+        <RenterNavbar
+          currentTab={adminTab}
+          onNavigate={handleAdminNavigate}
+          onViewStorefront={viewStorefront}
+        />
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
+            {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
+            {adminTab === 'products' && <Products />}
+            {adminTab === 'orders' && <Orders selectedOrderId={selectedOrderId} />}
+            {adminTab === 'pickup-return' && <PickupReturn />}
+            {adminTab === 'deposits' && <Deposits />}
+            {adminTab === 'late-fees' && <LateFees />}
+            {adminTab === 'payouts' && <Payouts />}
+            {adminTab === 'quotations' && <Quotations />}
+            {adminTab === 'settings' && <Settings />}
+            {adminTab === 'profile' && <Profile />}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LANDING PAGE (no navbar — immersive) ─────────────────
+  if (customerTab === 'landing') {
+    return (
+      <div className="min-h-screen flex flex-col justify-between transition-colors duration-300">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <Landing onNavigate={handleCustomerNavigate} />
+        </main>
+        <CustomerFooter />
+      </div>
+    );
+  }
+
+  // ── CUSTOMER PORTAL (green-accent navbar) ────────────────
   return (
     <div className="min-h-screen flex flex-col justify-between transition-colors duration-300">
-      <CustomerHeader currentTab={customerTab} onNavigate={handleCustomerNavigate} />
+      <CustomerNavbar currentTab={customerTab} onNavigate={handleCustomerNavigate} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {customerTab === 'landing' && <Landing onNavigate={handleCustomerNavigate} />}
         {customerTab === 'auth' && (
-          <Auth onSuccess={() => handleCustomerNavigate('catalog')} />
+          <Auth
+            onSuccess={(role) => {
+              if (role === 'customer') {
+                handleCustomerNavigate('catalog');
+              } else {
+                handleAdminNavigate('dashboard');
+              }
+            }}
+          />
         )}
         {customerTab === 'catalog' && <Catalog onNavigate={handleCustomerNavigate} />}
         {customerTab === 'product-detail' && (

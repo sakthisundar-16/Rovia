@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Eye, Download, CheckCircle2, Edit, Save, Calendar, ShieldCheck, Tag } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -7,15 +7,34 @@ import { Badge, BadgeVariant } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { InvoicePreviewModal } from '../../components/common/InvoicePreviewModal';
-import { INITIAL_ORDERS, Order } from '../../services/mockData';
+import { Order } from '../../services/mockData';
+import { api } from '../../services/api';
 import { useToast } from '../../components/ui/Toast';
+import { useAuth } from '../../context/AuthContext';
 
 export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId }) => {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(
-    INITIAL_ORDERS.find((o) => o.id === selectedOrderId) || null
-  );
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user, mode } = useAuth();
   
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  
+  useEffect(() => {
+    setLoading(true);
+    api.getOrders().then(allOrders => {
+      // Filter if renter
+      const myOrders = mode === 'renter' && user?.id 
+        ? allOrders.filter(o => o.renterId === user.id)
+        : allOrders;
+        
+      setOrders(myOrders);
+      if (selectedOrderId) {
+        setSelectedOrder(myOrders.find(o => o.id === selectedOrderId) || null);
+      }
+      setLoading(false);
+    });
+  }, [selectedOrderId, mode, user]);
+
   // Edit Order Modal State
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editCustomerName, setEditCustomerName] = useState('');
@@ -41,7 +60,7 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
     setEditTotalAmount(order.totalAmount);
   };
 
-  const handleSaveOrderChanges = (e: React.FormEvent) => {
+  const handleSaveOrderChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
 
@@ -59,20 +78,70 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
       totalAmount: Number(editTotalAmount),
     };
 
-    setOrders((prev) => prev.map((o) => (o.id === editingOrder.id ? updated : o)));
-    if (selectedOrder?.id === editingOrder.id) {
-      setSelectedOrder(updated);
+    const savedOrder = await api.updateOrder(updated.id, updated);
+    
+    if (savedOrder) {
+      setOrders((prev) => prev.map((o) => (o.id === savedOrder.id ? savedOrder : o)));
+      if (selectedOrder?.id === savedOrder.id) {
+        setSelectedOrder(savedOrder);
+      }
+      showToast('Contract Updated!', `Order #${savedOrder.orderNumber} updated successfully.`, 'success');
     }
-
-    showToast('Contract Updated!', `Order #${editingOrder.orderNumber} updated successfully.`, 'success');
+    
     setEditingOrder(null);
   };
 
-  const handleMarkPickedUp = (orderId: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: 'Active' as const } : o))
-    );
-    showToast('Status Updated', 'Order marked as Picked Up / Dispatched', 'success');
+  const handleMarkPickedUp = async (orderId: string) => {
+    const updated = await api.updateOrder(orderId, { status: 'Active' });
+    if (updated) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? updated : o))
+      );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      showToast('Status Updated', 'Order marked as Picked Up / Dispatched', 'success');
+    }
+  };
+
+  const handleApproveOrder = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation();
+    const updated = await api.updateOrder(orderId, { status: 'Upcoming' });
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      showToast('Order Approved!', 'Rental request approved & confirmed in database.', 'success');
+    }
+  };
+
+  const handleRejectOrder = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation();
+    const updated = await api.updateOrder(orderId, { status: 'Cancelled' });
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      showToast('Order Declined', 'Rental request marked as cancelled.', 'info');
+    }
+  };
+
+  const handleCollectProduct = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation();
+    const updated = await api.updateOrder(orderId, { status: 'Completed', depositStatus: 'Refunded' });
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      showToast('Product Collected & Completed!', 'Rental finished & security deposit released.', 'success');
+      try {
+        const channel = new BroadcastChannel('rovia_orders_channel');
+        channel.postMessage({ type: 'ORDER_UPDATED', orderId });
+      } catch {}
+    }
   };
 
   const columns: Column<Order>[] = [
@@ -82,16 +151,37 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
     { key: 'rentalWindow', header: 'Window', render: (r) => <span className="text-xs font-mono">{r.rentalWindow.start} → {r.rentalWindow.end}</span> },
     { key: 'totalAmount', header: 'Total Value', render: (r) => <span className="font-mono font-bold">₹{r.totalAmount.toLocaleString()}</span> },
     { key: 'depositStatus', header: 'Deposit', render: (r) => <Badge variant={r.depositStatus === 'Refunded' ? 'success' : 'info'}>{r.depositStatus}</Badge> },
-    { key: 'status', header: 'Status', render: (r) => <Badge variant={r.status === 'Active' ? 'success' : r.status === 'Overdue' ? 'danger' : 'neutral'}>{r.status}</Badge> },
+    { key: 'status', header: 'Status', render: (r) => <Badge variant={r.status === 'Active' ? 'success' : r.status === 'Completed' ? 'success' : r.status === 'Return Requested' ? 'warning' : r.status === 'Overdue' ? 'danger' : r.status === 'Pending Approval' ? 'warning' : 'neutral'}>{r.status}</Badge> },
     {
       key: 'actions',
       header: 'Actions',
       render: (r) => (
         <div className="flex items-center gap-2">
+          {r.status === 'Pending Approval' && (
+            <Button size="sm" variant="primary" leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />} onClick={(e) => handleApproveOrder(e, r.id)}>
+              Approve
+            </Button>
+          )}
+          {r.status === 'Return Requested' && (
+            <Button size="sm" className="bg-[#5E7A63] hover:bg-[#4E6752] text-white font-bold" leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />} onClick={(e) => handleCollectProduct(e, r.id)}>
+              Accept Return &amp; End Rental Process ✓
+            </Button>
+          )}
           <Button size="sm" variant="outline" leftIcon={<Eye className="w-3.5 h-3.5" />} onClick={() => setSelectedOrder(r)}>
             View
           </Button>
-          <Button size="sm" variant="primary" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={(e) => handleOpenEditModal(e, r)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-[#988686]/40 text-[#988686] hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`http://localhost:3000/staff-scanner.html?token=${r.orderNumber}`, '_blank');
+            }}
+          >
+            Scan &amp; Verify QR 📱
+          </Button>
+          <Button size="sm" variant="outline" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={(e) => handleOpenEditModal(e, r)}>
             Edit Contract
           </Button>
         </div>
@@ -99,13 +189,17 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
     }
   ];
 
+  if (loading) {
+     return <div className="p-8 text-center text-[#988686]">Loading orders...</div>;
+  }
+
   return (
     <div className="w-full space-y-8 page-transition pb-16">
       <div className="flex items-center justify-between border-b border-[#5C4E4E]/30 pb-4">
         <div>
           <span className="text-xs font-mono uppercase text-[#988686] tracking-widest">CONTRACT MANAGEMENT</span>
           <h1 className="font-heading text-3xl font-bold text-[#000000] dark:text-white mt-1">
-            Orders & Rental Contracts
+            Orders &amp; Rental Contracts
           </h1>
         </div>
       </div>
@@ -182,6 +276,7 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
                   <option value="Overdue">Overdue</option>
                   <option value="Completed">Completed</option>
                   <option value="Cancelled">Cancelled</option>
+                  <option value="Pending Approval">Pending Approval</option>
                   <option value="Pending Return Inspection">Pending Return Inspection</option>
                 </select>
               </div>
@@ -195,6 +290,7 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
                 >
                   <option value="Held">Held in Escrow</option>
                   <option value="Refunded">Refunded to Customer</option>
+                  <option value="Partially Deducted">Partially Deducted</option>
                   <option value="Deducted">Deducted for Damage / Late Fee</option>
                 </select>
               </div>

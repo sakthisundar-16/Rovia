@@ -15,12 +15,15 @@ import {
   Calculator,
   Sliders,
 } from 'lucide-react';
+import { Bell, CheckCircle2, XCircle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { INITIAL_ORDERS, MARKETPLACE_RENTERS, Order, RenterVendor } from '../../services/mockData';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import { useToast } from '../../components/ui/Toast';
 
 interface DashboardProps {
   onNavigate: (tab: string, itemNumber?: string) => void;
@@ -29,8 +32,88 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { mode } = useAuth();
   const isAdmin = mode === 'admin';
+  const { showToast } = useToast();
 
+  const [orders, setOrders] = React.useState<Order[]>([]);
   const [revenuePeriod, setRevenuePeriod] = useState<'today' | 'week' | 'month'>('month');
+
+  const fetchDashboardOrders = () => {
+    api.getOrders().then((all) => setOrders(all));
+  };
+
+  React.useEffect(() => {
+    fetchDashboardOrders();
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('rovia_orders_channel');
+      channel.onmessage = () => fetchDashboardOrders();
+    } catch {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'rovia_orders' || !e.key) fetchDashboardOrders();
+    };
+    const handleCustomSync = () => fetchDashboardOrders();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('rovia_order_updated', handleCustomSync);
+
+    const interval = setInterval(fetchDashboardOrders, 2000);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('rovia_order_updated', handleCustomSync);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const pendingOrders = orders.filter((o) => o.status === 'Pending Approval');
+  const returnRequestedOrders = orders.filter(
+    (o) => o.status === 'Return Requested' || o.status === 'Returning'
+  );
+
+  const handleSimulateReturn = async () => {
+    const target = orders.find((o) => o.status === 'Active') || orders[0];
+    if (target) {
+      const updated = await api.updateOrder(target.id, { status: 'Return Requested' });
+      if (updated) {
+        setOrders((prev) => prev.map((o) => (o.id === target.id ? updated : o)));
+        showToast('Simulated Return Request Sent!', `Return notification active for ${target.orderNumber}`, 'info');
+        try {
+          const channel = new BroadcastChannel('rovia_orders_channel');
+          channel.postMessage({ type: 'ORDER_UPDATED', orderId: target.id });
+        } catch {}
+      }
+    }
+  };
+
+  const handleCollectProduct = async (orderId: string) => {
+    const updated = await api.updateOrder(orderId, {
+      status: 'Completed',
+      depositStatus: 'Refunded',
+    });
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      showToast(
+        'Product Collected & Rental Completed!',
+        'Equipment received & physical inspection passed. Deposit released.',
+        'success'
+      );
+      try {
+        const channel = new BroadcastChannel('rovia_orders_channel');
+        channel.postMessage({ type: 'ORDER_UPDATED', orderId });
+      } catch {}
+    }
+  };
+
+  const handleApproveOrder = async (orderId: string) => {
+    const updated = await api.updateOrder(orderId, { status: 'Upcoming' });
+    if (updated) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      showToast('Rental Request Approved!', `Order ${updated.orderNumber} approved & saved to database.`, 'success');
+    }
+  };
 
   // KPI Data - Role Responsive
   const kpis = isAdmin
@@ -213,6 +296,132 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <Button variant="outline" size="sm" leftIcon={<Sliders className="w-4 h-4" />}>
           Customize Dashboard
         </Button>
+      </div>
+
+      {/* Unified Pickups & Returns Logistics Operations Hub */}
+      <div className="glass-panel p-6 rounded-3xl border-2 border-[#988686] shadow-2xl space-y-6 bg-[#988686]/10 animate-fadeIn">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#988686]/30 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-[#988686] text-white shadow-lg">
+              <Bell className="w-6 h-6 animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#988686] text-white tracking-wider">
+                  LOGISTICS OPERATIONS CENTER
+                </span>
+                <span className="text-xs text-[#5E7A63] font-bold font-mono">
+                  Pickups: {pendingOrders.length} • Returns: {returnRequestedOrders.length}
+                </span>
+              </div>
+              <h2 className="font-heading text-2xl font-bold text-[#000000] dark:text-white mt-1">
+                Active Pickups &amp; Return Collection Notifications
+              </h2>
+              <p className="text-xs text-[#5C4E4E] dark:text-[#B5A9A9]">
+                Manage product dispatches, QR handovers, and return collections in real time.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {returnRequestedOrders.length === 0 && (
+              <Button size="sm" variant="outline" className="text-xs border-[#D97706]/40 text-[#D97706]" onClick={handleSimulateReturn}>
+                Test Return Request 🔔
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => onNavigate('orders')}>
+              View All Orders Tab →
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pickups & Handover Section */}
+          <div className="space-y-3 p-4 rounded-2xl bg-black/20 border border-[#988686]/30">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-[#000000] dark:text-white flex items-center gap-2">
+                📦 1. Pickups &amp; Handover Requests ({pendingOrders.length})
+              </h3>
+              <Badge variant={pendingOrders.length > 0 ? 'warning' : 'neutral'}>
+                {pendingOrders.length} Pending
+              </Badge>
+            </div>
+            {pendingOrders.length === 0 ? (
+              <p className="text-xs text-[#988686] italic py-4 text-center">No pending pickup requests. All contracts verified or active.</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingOrders.map((o) => (
+                  <div key={o.id} className="p-3.5 rounded-xl bg-white/95 dark:bg-[#0D0B0B]/95 border border-[#988686]/40 space-y-2 shadow-sm">
+                    <div className="flex items-center justify-between text-xs font-mono font-bold">
+                      <span className="text-[#988686]">#{o.orderNumber}</span>
+                      <span className="text-[#5E7A63]">₹{o.totalAmount.toLocaleString()}</span>
+                    </div>
+                    <p className="font-bold text-xs text-[#000000] dark:text-white truncate">{o.productName}</p>
+                    <p className="text-[11px] text-[#5C4E4E] dark:text-[#B5A9A9]">Customer: <strong>{o.customerName}</strong></p>
+                    <div className="flex gap-2 pt-1 border-t border-[#988686]/20">
+                      <Button
+                        size="sm"
+                        className="flex-1 text-[11px] py-1"
+                        variant="primary"
+                        leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                        onClick={() => handleApproveOrder(o.id)}
+                      >
+                        Approve Request
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 text-[11px] py-1 border-[#988686]/40 text-[#988686] hover:text-white"
+                        variant="outline"
+                        onClick={() => window.open(`http://localhost:3000/staff-scanner.html?token=${o.orderNumber}`, '_blank')}
+                      >
+                        Verify Handover QR 📱
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Returns & Collection Section */}
+          <div className="space-y-3 p-4 rounded-2xl bg-black/20 border border-[#D97706]/30">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-[#000000] dark:text-white flex items-center gap-2">
+                🔄 2. Customer Return Collection Requests ({returnRequestedOrders.length})
+              </h3>
+              <Badge variant={returnRequestedOrders.length > 0 ? 'warning' : 'neutral'}>
+                {returnRequestedOrders.length} Ready for Collection
+              </Badge>
+            </div>
+            {returnRequestedOrders.length === 0 ? (
+              <div className="py-6 text-center space-y-2">
+                <p className="text-xs text-[#988686] italic">No active return requests right now.</p>
+                <p className="text-[11px] text-[#5C4E4E] dark:text-[#B5A9A9]">When a customer clicks "Return Product Now" in My Rentals, it pops up here instantly!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {returnRequestedOrders.map((o) => (
+                  <div key={o.id} className="p-4 rounded-xl bg-white/95 dark:bg-[#0D0B0B]/95 border-2 border-[#D97706] space-y-3 shadow-lg border-amber-500">
+                    <div className="flex items-center justify-between text-xs font-mono font-bold">
+                      <span className="text-[#988686]">#{o.orderNumber}</span>
+                      <Badge variant="warning">Return Initiated</Badge>
+                    </div>
+                    <p className="font-bold text-sm text-[#000000] dark:text-white truncate">{o.productName}</p>
+                    <p className="text-xs text-[#5C4E4E] dark:text-[#B5A9A9]">Customer: <strong className="text-[#000000] dark:text-white">{o.customerName}</strong></p>
+                    <p className="text-xs font-mono font-bold text-[#5E7A63]">Refundable Security Deposit: ₹{o.depositAmount?.toLocaleString()}</p>
+                    <Button
+                      size="sm"
+                      className="w-full bg-[#5E7A63] hover:bg-[#4E6752] text-white font-bold text-xs py-2.5 shadow-md"
+                      leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                      onClick={() => handleCollectProduct(o.id)}
+                    >
+                      Accept Return &amp; End Rental Process ✓
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Top Row: 5 KPI Cards with Sparklines */}
