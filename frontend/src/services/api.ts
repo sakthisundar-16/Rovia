@@ -158,12 +158,14 @@ export const api = {
         const products = data.map(productFromApi);
         saveStored('rovia_products', products);
         localProducts = products;
-        const allProducts = [...localProducts, ...EXTENDED_PRODUCTS.filter(ep => !localProducts.find(lp => lp.id === ep.id))];
+        const customProducts = localProducts.filter(lp => !lp.id.startsWith('p-') && !UNIVERSAL_PRODUCTS.some(up => up.id === lp.id));
+        const allProducts = [...customProducts, ...UNIVERSAL_PRODUCTS, ...EXTENDED_PRODUCTS];
         return renterId ? allProducts.filter(p => p.renterId === renterId) : allProducts;
       }
     } catch {}
     localProducts = loadStored('rovia_products', UNIVERSAL_PRODUCTS);
-    const allProducts = [...localProducts, ...EXTENDED_PRODUCTS.filter(ep => !localProducts.find(lp => lp.id === ep.id))];
+    const customProducts = localProducts.filter(lp => !lp.id.startsWith('p-') && !UNIVERSAL_PRODUCTS.some(up => up.id === lp.id));
+    const allProducts = [...customProducts, ...UNIVERSAL_PRODUCTS, ...EXTENDED_PRODUCTS];
     return renterId ? allProducts.filter(p => p.renterId === renterId) : allProducts;
   },
 
@@ -173,7 +175,8 @@ export const api = {
       if (res.ok) return productFromApi(await res.json());
     } catch {}
     const stored = loadStored<Product>('rovia_products', UNIVERSAL_PRODUCTS);
-    const allProducts = [...stored, ...EXTENDED_PRODUCTS.filter(ep => !stored.find(lp => lp.id === ep.id))];
+    const customProducts = stored.filter(lp => !lp.id.startsWith('p-') && !UNIVERSAL_PRODUCTS.some(up => up.id === lp.id));
+    const allProducts = [...customProducts, ...UNIVERSAL_PRODUCTS, ...EXTENDED_PRODUCTS];
     return allProducts.find(p => p.id === id);
   },
 

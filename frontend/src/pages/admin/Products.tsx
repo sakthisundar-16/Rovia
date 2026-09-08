@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2, Upload, Link as LinkIcon, Image as ImageIcon, Save } from 'lucide-react';
+import { Package, Plus, Edit, Tag, Layers, Search, CheckCircle2, Upload, Link as LinkIcon, Image as ImageIcon, Save, X, Camera, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +13,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
+
+const IMAGE_SLOTS = [
+  { label: 'Slot 1: Cover / Front', sub: 'Primary display photo (Mandatory)' },
+  { label: 'Slot 2: Side / Profile Angle', sub: 'Shows side profile & dimensions' },
+  { label: 'Slot 3: Back / Ports & Controls', sub: 'Shows rear connectors & branding' },
+  { label: 'Slot 4: Detail / Accessories Kit', sub: 'Close-up, packaging or kit items' },
+];
 
 export const Products: React.FC = () => {
   const { user } = useAuth();
@@ -29,9 +36,12 @@ export const Products: React.FC = () => {
   const [dailyRate, setDailyRate] = useState(5000);
   const [securityDeposit, setSecurityDeposit] = useState(25000);
   const [stock, setStock] = useState(3);
-  const [imageInputType, setImageInputType] = useState<'URL' | 'UPLOAD'>('URL');
-  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+
+  // 4-Image Slots for Add Product (Flipkart / Amazon Style)
+  const [images, setImages] = useState<string[]>(['', '', '', '']);
+  const [activeSlot, setActiveSlot] = useState<number>(0);
+  const [slotMode, setSlotMode] = useState<'URL' | 'UPLOAD'>('URL');
 
   // Edit Product Modal Form State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -42,8 +52,12 @@ export const Products: React.FC = () => {
   const [editDailyRate, setEditDailyRate] = useState(0);
   const [editSecurityDeposit, setEditSecurityDeposit] = useState(0);
   const [editStock, setEditStock] = useState(1);
-  const [editImageUrl, setEditImageUrl] = useState('');
   const [editDescription, setEditDescription] = useState('');
+
+  // 4-Image Slots for Edit Product
+  const [editImages, setEditImages] = useState<string[]>(['', '', '', '']);
+  const [activeEditSlot, setActiveEditSlot] = useState<number>(0);
+  const [editSlotMode, setEditSlotMode] = useState<'URL' | 'UPLOAD'>('URL');
 
   const loadProducts = () => {
     api.getProducts().then((data) => setProducts(data));
@@ -53,16 +67,28 @@ export const Products: React.FC = () => {
     loadProducts();
   }, []);
 
-  const handleFileUpload = (file: File, isEditMode = false) => {
+  const handleSlotImageChange = (index: number, url: string, isEdit = false) => {
+    if (isEdit) {
+      setEditImages((prev) => {
+        const next = [...prev];
+        next[index] = url;
+        return next;
+      });
+    } else {
+      setImages((prev) => {
+        const next = [...prev];
+        next[index] = url;
+        return next;
+      });
+    }
+  };
+
+  const handleFileUploadSlot = (file: File, slotIndex: number, isEditMode = false) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (reader.result) {
-        if (isEditMode) {
-          setEditImageUrl(reader.result as string);
-        } else {
-          setImageUrl(reader.result as string);
-        }
-        showToast('Image Loaded Successfully', 'File converted to base64 preview format.', 'success');
+        handleSlotImageChange(slotIndex, reader.result as string, isEditMode);
+        showToast(`Slot ${slotIndex + 1} Image Loaded`, 'File converted to base64 preview.', 'success');
       }
     };
     reader.readAsDataURL(file);
@@ -75,7 +101,9 @@ export const Products: React.FC = () => {
       return;
     }
 
-    const finalImage = imageUrl.trim() || FALLBACK_IMAGE;
+    const validImages = images.filter((img) => img && img.trim().length > 0);
+    const finalPrimary = validImages[0] || FALLBACK_IMAGE;
+    const finalGallery = validImages.length > 0 ? validImages : [finalPrimary];
 
     const created = await api.createProduct({
       renterId: user?.id || 'rnt-101',
@@ -90,15 +118,15 @@ export const Products: React.FC = () => {
       stock: Number(stock),
       available: Number(stock),
       rating: 5.0,
-      image: finalImage,
-      gallery: [finalImage],
+      image: finalPrimary,
+      gallery: finalGallery,
       description: description || `Universal rental item under ${category}`,
       specs: { Category: category, SKU: sku },
       variants: ['Standard Rental Package'],
     });
 
     setProducts((prev) => [created, ...prev]);
-    showToast('Universal Rental SKU Created!', `${name} added to live catalog & persistent storage.`, 'success');
+    showToast('Universal Rental SKU Created!', `${name} added with ${finalGallery.length} product photos (Flipkart/Amazon layout).`, 'success');
     setShowAddModal(false);
     
     // Reset Form
@@ -106,7 +134,8 @@ export const Products: React.FC = () => {
     setSku('');
     setBrand('');
     setDescription('');
-    setImageUrl('');
+    setImages(['', '', '', '']);
+    setActiveSlot(0);
   };
 
   const handleOpenEditModal = (e: React.MouseEvent, product: Product) => {
@@ -119,13 +148,26 @@ export const Products: React.FC = () => {
     setEditDailyRate(product.dailyRate);
     setEditSecurityDeposit(product.securityDeposit);
     setEditStock(product.stock);
-    setEditImageUrl(product.image);
     setEditDescription(product.description);
+    
+    // Populate up to 4 images from product gallery or primary image
+    const initialGallery = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+    setEditImages([
+      initialGallery[0] || '',
+      initialGallery[1] || '',
+      initialGallery[2] || '',
+      initialGallery[3] || ''
+    ]);
+    setActiveEditSlot(0);
   };
 
   const handleSaveEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
+
+    const validEditImages = editImages.filter((img) => img && img.trim().length > 0);
+    const finalPrimary = validEditImages[0] || editingProduct.image || FALLBACK_IMAGE;
+    const finalGallery = validEditImages.length > 0 ? validEditImages : [finalPrimary];
 
     const updated: Product = {
       ...editingProduct,
@@ -137,14 +179,14 @@ export const Products: React.FC = () => {
       securityDeposit: Number(editSecurityDeposit),
       stock: Number(editStock),
       available: Number(editStock),
-      image: editImageUrl.trim() || FALLBACK_IMAGE,
-      gallery: [editImageUrl.trim() || FALLBACK_IMAGE],
+      image: finalPrimary,
+      gallery: finalGallery,
       description: editDescription,
     };
 
     await api.updateProduct(editingProduct.id, updated);
     setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updated : p)));
-    showToast('Product SKU Updated!', `${editName} changes saved persistently.`, 'success');
+    showToast('Product SKU Updated!', `${editName} updated with ${finalGallery.length} product images.`, 'success');
     setEditingProduct(null);
   };
 
@@ -272,60 +314,114 @@ export const Products: React.FC = () => {
             <Input label="Initial Stock Units" type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </div>
 
-          {/* Product Image Selection Mode: Direct Upload vs Link URL */}
-          <div className="space-y-2 border-t border-[#988686]/20 pt-3">
-            <label className="font-semibold text-[#5C4E4E] dark:text-[#B5A9A9] uppercase block">
-              Product Image Attachment (Link URL or File Upload)
-            </label>
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#988686]/15 max-w-xs">
-              <button
-                type="button"
-                onClick={() => setImageInputType('URL')}
-                className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  imageInputType === 'URL' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-                }`}
-              >
-                <LinkIcon className="w-3.5 h-3.5" /> Image Link URL
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageInputType('UPLOAD')}
-                className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  imageInputType === 'UPLOAD' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-                }`}
-              >
-                <Upload className="w-3.5 h-3.5" /> Direct File Upload
-              </button>
+          {/* 4-Image Slots for Product Creation (Flipkart / Amazon Style) */}
+          <div className="space-y-3 border-t border-[#988686]/20 pt-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="font-bold text-[#000000] dark:text-white uppercase text-xs flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-[#988686]" />
+                  Product Visual Assets (4 Angle Slots • Flipkart / Amazon Style)
+                </label>
+                <p className="text-[10px] text-[#988686]">
+                  Click any slot to paste an image URL or upload directly from your device.
+                </p>
+              </div>
+              <Badge variant="info">
+                {images.filter(img => img && img.trim().length > 0).length} / 4 Slots Filled
+              </Badge>
             </div>
 
-            {imageInputType === 'URL' ? (
-              <Input
-                label="Paste Any Image Web Address (URL)"
-                placeholder="https://images.unsplash.com/... or https://..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            ) : (
-              <FileUpload label="Select Image File from Computer" onFileSelect={(file) => handleFileUpload(file, false)} />
-            )}
+            {/* 4 Slot Thumbnails Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {IMAGE_SLOTS.map((slot, idx) => {
+                const img = images[idx];
+                const isSelected = activeSlot === idx;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setActiveSlot(idx)}
+                    className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center text-center relative ${
+                      isSelected
+                        ? 'border-[#988686] ring-2 ring-[#988686]/50 bg-[#988686]/10 shadow-warm-sm'
+                        : 'border-[#988686]/20 glass-panel hover:border-[#988686]/40'
+                    }`}
+                  >
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-black/40 border border-[#988686]/20 flex items-center justify-center">
+                      {img ? (
+                        <>
+                          <img src={img} alt={slot.label} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSlotImageChange(idx, '');
+                            }}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white hover:bg-[#A0524E] transition-colors"
+                            title="Clear Slot"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-2 text-[#988686]">
+                          <Camera className="w-5 h-5 mb-1 opacity-50" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Empty</span>
+                        </div>
+                      )}
+                      <div className="absolute bottom-1 left-1">
+                        <span className={`text-[8px] font-bold font-mono px-1.5 py-0.5 rounded ${idx === 0 ? 'bg-[#988686] text-white' : 'bg-black/60 text-white'}`}>
+                          {idx === 0 ? 'MAIN' : `ANGLE ${idx + 1}`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#000000] dark:text-white mt-1.5 truncate w-full">
+                      {slot.label.split(':')[1] || slot.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
 
-            {/* Live Image Preview Box */}
-            <div className="mt-2 p-3 rounded-xl glass-panel border border-[#988686]/30 flex items-center gap-4">
-              <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-[#988686]/40">
-                <img
-                  src={imageUrl || FALLBACK_IMAGE}
-                  alt="Product Preview"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-                  }}
-                  className="w-full h-full object-cover"
+            {/* Active Slot Configuration Card */}
+            <div className="p-3 rounded-2xl glass-panel border border-[#988686]/30 space-y-2 bg-[#988686]/5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-[#000000] dark:text-white">
+                  Editing {IMAGE_SLOTS[activeSlot]?.label}
+                </span>
+                <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#988686]/15 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setSlotMode('URL')}
+                    className={`px-2 py-0.5 font-bold rounded-md transition-all ${
+                      slotMode === 'URL' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                    }`}
+                  >
+                    Image URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSlotMode('UPLOAD')}
+                    className={`px-2 py-0.5 font-bold rounded-md transition-all ${
+                      slotMode === 'UPLOAD' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                    }`}
+                  >
+                    Upload File
+                  </button>
+                </div>
+              </div>
+
+              {slotMode === 'URL' ? (
+                <Input
+                  placeholder="Paste Unsplash / product image URL address..."
+                  value={images[activeSlot] || ''}
+                  onChange={(e) => handleSlotImageChange(activeSlot, e.target.value)}
                 />
-              </div>
-              <div className="text-xs">
-                <span className="font-bold text-[#000000] dark:text-white block">Image Live Preview</span>
-                <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{imageUrl || 'Default Fallback Image'}</p>
-                <span className="text-[10px] text-[#5E7A63] font-semibold mt-0.5 block">✓ Image ready for catalog</span>
-              </div>
+              ) : (
+                <FileUpload
+                  label={`Upload Photo for ${IMAGE_SLOTS[activeSlot]?.label}`}
+                  onFileSelect={(file) => handleFileUploadSlot(file, activeSlot, false)}
+                />
+              )}
             </div>
           </div>
 
@@ -375,29 +471,114 @@ export const Products: React.FC = () => {
               <Input label="Stock Units" type="number" value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} />
             </div>
 
-            <div className="space-y-2 border-t border-[#988686]/20 pt-3">
-              <Input
-                label="Image URL Address"
-                value={editImageUrl}
-                onChange={(e) => setEditImageUrl(e.target.value)}
-              />
-              <FileUpload label="Or Upload New Image File" onFileSelect={(file) => handleFileUpload(file, true)} />
+            {/* 4-Image Slots for Edit Product (Flipkart / Amazon Style) */}
+            <div className="space-y-3 border-t border-[#988686]/20 pt-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-bold text-[#000000] dark:text-white uppercase text-xs flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#988686]" />
+                    Product Visual Assets (4 Angle Slots • Flipkart / Amazon Style)
+                  </label>
+                  <p className="text-[10px] text-[#988686]">
+                    Click any angle slot to update photo URL or upload new image file.
+                  </p>
+                </div>
+                <Badge variant="info">
+                  {editImages.filter(img => img && img.trim().length > 0).length} / 4 Slots Filled
+                </Badge>
+              </div>
 
-              <div className="mt-2 p-3 rounded-xl glass-panel border border-[#988686]/30 flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-[#988686]/40">
-                  <img
-                    src={editImageUrl || FALLBACK_IMAGE}
-                    alt="Edit Preview"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-                    }}
-                    className="w-full h-full object-cover"
+              {/* 4 Slot Thumbnails Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {IMAGE_SLOTS.map((slot, idx) => {
+                  const img = editImages[idx];
+                  const isSelected = activeEditSlot === idx;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setActiveEditSlot(idx)}
+                      className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center text-center relative ${
+                        isSelected
+                          ? 'border-[#988686] ring-2 ring-[#988686]/50 bg-[#988686]/10 shadow-warm-sm'
+                          : 'border-[#988686]/20 glass-panel hover:border-[#988686]/40'
+                      }`}
+                    >
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-black/40 border border-[#988686]/20 flex items-center justify-center">
+                        {img ? (
+                          <>
+                            <img src={img} alt={slot.label} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSlotImageChange(idx, '', true);
+                              }}
+                              className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white hover:bg-[#A0524E] transition-colors"
+                              title="Clear Slot"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-2 text-[#988686]">
+                            <Camera className="w-5 h-5 mb-1 opacity-50" />
+                            <span className="text-[9px] font-mono uppercase tracking-wider">Empty</span>
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 left-1">
+                          <span className={`text-[8px] font-bold font-mono px-1.5 py-0.5 rounded ${idx === 0 ? 'bg-[#988686] text-white' : 'bg-black/60 text-white'}`}>
+                            {idx === 0 ? 'MAIN' : `ANGLE ${idx + 1}`}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#000000] dark:text-white mt-1.5 truncate w-full">
+                        {slot.label.split(':')[1] || slot.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Active Slot Configuration Card */}
+              <div className="p-3 rounded-2xl glass-panel border border-[#988686]/30 space-y-2 bg-[#988686]/5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-[#000000] dark:text-white">
+                    Editing {IMAGE_SLOTS[activeEditSlot]?.label}
+                  </span>
+                  <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#988686]/15 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setEditSlotMode('URL')}
+                      className={`px-2 py-0.5 font-bold rounded-md transition-all ${
+                        editSlotMode === 'URL' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                      }`}
+                    >
+                      Image URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSlotMode('UPLOAD')}
+                      className={`px-2 py-0.5 font-bold rounded-md transition-all ${
+                        editSlotMode === 'UPLOAD' ? 'bg-[#000000] dark:bg-[#988686] text-white' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                  </div>
+                </div>
+
+                {editSlotMode === 'URL' ? (
+                  <Input
+                    placeholder="Paste Unsplash / product image URL address..."
+                    value={editImages[activeEditSlot] || ''}
+                    onChange={(e) => handleSlotImageChange(activeEditSlot, e.target.value, true)}
                   />
-                </div>
-                <div className="text-xs">
-                  <span className="font-bold text-[#000000] dark:text-white block">Image Preview</span>
-                  <p className="text-[10px] text-[#988686] line-clamp-1 truncate max-w-xs">{editImageUrl}</p>
-                </div>
+                ) : (
+                  <FileUpload
+                    label={`Upload Photo for ${IMAGE_SLOTS[activeEditSlot]?.label}`}
+                    onFileSelect={(file) => handleFileUploadSlot(file, activeEditSlot, true)}
+                  />
+                )}
               </div>
             </div>
 

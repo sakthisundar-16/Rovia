@@ -29,9 +29,11 @@ app.add_middleware(
 )
 
 from app.rentals.handover_verification import router as handover_router
+from app.rentals.return_verification import router as return_verification_router
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(handover_router)
+app.include_router(return_verification_router)
 
 @app.get("/")
 async def root():
