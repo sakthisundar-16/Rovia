@@ -118,13 +118,25 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({ currentTab, onNa
           )}
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu button & quick cart */}
         <div className="md:hidden flex items-center gap-2">
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-[#000000] dark:text-white"
+            onClick={() => onNavigate('cart')}
+            className="relative p-2 rounded-lg glass-panel hover:bg-[#988686]/20 transition-colors text-[#000000] dark:text-white"
+            title="Cart"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <ShoppingBag className="w-5 h-5 text-[#988686]" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#5E7A63] text-white text-[9px] font-bold flex items-center justify-center shadow-warm-sm">
+                {cartCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg glass-panel hover:bg-[#988686]/20 text-[#000000] dark:text-white"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>

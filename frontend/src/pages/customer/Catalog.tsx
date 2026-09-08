@@ -58,6 +58,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
   const [sortOption, setSortOption] = useState<SortOption>('featured');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(true);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Pagination State (24 items per page across 300 products)
   const [currentPage, setCurrentPage] = useState(1);
@@ -188,6 +189,173 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
     minRating > 0 ||
     inStockOnly;
 
+  const renderFilterContent = (onCloseMobile?: () => void) => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between border-b border-[#988686]/20 pb-3">
+        <span className="font-heading text-sm font-bold text-[#000000] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+          <Filter className="w-4 h-4 text-[#988686]" /> Filters
+        </span>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} className="text-[11px] text-[#A0524E] font-bold hover:underline">
+              Reset
+            </button>
+          )}
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="p-1.5 rounded-lg text-[#988686] hover:text-white hover:bg-[#988686]/20 ml-2"
+              title="Close Filters"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* In Stock Only Switch */}
+      <div className="p-3 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 flex items-center justify-between">
+        <div>
+          <span className="text-xs font-bold block text-[#000000] dark:text-white">In Stock Only</span>
+          <span className="text-[10px] text-[#988686]">Hide unavailable items</span>
+        </div>
+        <input
+          type="checkbox"
+          checked={inStockOnly}
+          onChange={(e) => setInStockOnly(e.target.checked)}
+          className="w-4 h-4 rounded text-[#5E7A63] cursor-pointer"
+        />
+      </div>
+
+      {/* Categories Facet */}
+      <div className="space-y-2">
+        <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
+          Category
+        </label>
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('All')}
+            className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all flex items-center justify-between ${
+              selectedCategory === 'All'
+                ? 'bg-[#000000] dark:bg-[#988686] text-white font-bold'
+                : 'text-[#988686] hover:bg-[#988686]/10 hover:text-white'
+            }`}
+          >
+            <span>All Categories</span>
+            <span className="font-mono text-[10px]">{products.length}</span>
+          </button>
+          {categoriesList.map(([cat, count]) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all flex items-center justify-between truncate ${
+                selectedCategory === cat
+                  ? 'bg-[#000000] dark:bg-[#988686] text-white font-bold'
+                  : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10 hover:text-white'
+              }`}
+            >
+              <span className="truncate">{cat}</span>
+              <span className="font-mono text-[10px] text-[#988686] ml-2 shrink-0">{count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Brand Filter Facet */}
+      <div className="space-y-2 border-t border-[#988686]/20 pt-4">
+        <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
+          Top Brands
+        </label>
+        <div className="space-y-1 max-h-40 overflow-y-auto pr-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedBrand('All')}
+            className={`w-full text-left px-2.5 py-1 rounded-lg transition-all ${
+              selectedBrand === 'All' ? 'bg-[#988686]/20 text-white font-bold' : 'text-[#988686]'
+            }`}
+          >
+            All Brands
+          </button>
+          {brandsList.map(([brand, count]) => (
+            <button
+              key={brand}
+              type="button"
+              onClick={() => setSelectedBrand(brand)}
+              className={`w-full text-left px-2.5 py-1 rounded-lg transition-all flex items-center justify-between ${
+                selectedBrand === brand ? 'bg-[#988686]/20 text-white font-bold' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
+              }`}
+            >
+              <span className="truncate">{brand}</span>
+              <span className="font-mono text-[10px] text-[#988686]">{count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Customer Ratings Facet */}
+      <div className="space-y-2 border-t border-[#988686]/20 pt-4">
+        <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
+          Customer Rating
+        </label>
+        <div className="space-y-1.5 text-xs">
+          {[4.5, 4.0, 3.0].map((stars) => (
+            <button
+              key={stars}
+              type="button"
+              onClick={() => setMinRating(minRating === stars ? 0 : stars)}
+              className={`w-full text-left px-3 py-1.5 rounded-xl border transition-all flex items-center justify-between ${
+                minRating === stars
+                  ? 'border-[#B08A4E] bg-[#B08A4E]/15 text-[#B08A4E] font-bold'
+                  : 'border-[#988686]/20 text-[#5C4E4E] dark:text-[#B5A9A9] hover:border-[#988686]/40'
+              }`}
+            >
+              <div className="flex items-center gap-1">
+                <span className="font-bold">{stars}★</span>
+                <span className="text-[11px]">& Above</span>
+              </div>
+              <div className="flex items-center text-[#B08A4E]">
+                {[...Array(Math.floor(stars))].map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-current" />
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range Slider */}
+      <div className="space-y-3 border-t border-[#988686]/20 pt-4">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9]">Daily Rate Cap</span>
+          <span className="font-mono font-bold text-[#000000] dark:text-white">Up to ₹{priceMax.toLocaleString()}</span>
+        </div>
+        <input
+          type="range"
+          min={500}
+          max={50000}
+          step={500}
+          value={priceMax}
+          onChange={(e) => setPriceMax(Number(e.target.value))}
+          className="w-full accent-[#988686] cursor-pointer"
+        />
+        <div className="flex gap-2">
+          {[2000, 8000, 25000].map((val) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setPriceMax(val)}
+              className="flex-1 py-1 rounded-lg glass-panel border border-[#988686]/20 text-[10px] font-mono hover:border-[#988686]/50 text-[#988686]"
+            >
+              &lt; ₹{val / 1000}k
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full space-y-6 page-transition pb-20">
       {/* ========================================================================= */}
@@ -218,10 +386,14 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
           <Button
             variant="outline"
             leftIcon={<SlidersHorizontal className="w-4 h-4" />}
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => {
+              setShowFilters(!showFilters);
+              setMobileFiltersOpen(true);
+            }}
             className="shrink-0"
           >
-            {showFilters ? 'Hide Filters' : 'Filters'}
+            <span className="hidden sm:inline">{showFilters ? 'Hide Filters' : 'Filters'}</span>
+            <span className="sm:hidden">Filters</span>
           </Button>
         </div>
       </div>
@@ -376,160 +548,10 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
       {/* 4. MAIN LAYOUT: Multi-Facet Sidebar Left + Products Grid/List Right       */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Sidebar Filters (Flipkart/Amazon Facets) */}
+        {/* Sidebar Filters (Desktop Sticky) */}
         {showFilters && (
-          <div className="lg:col-span-3 space-y-6 glass-panel p-5 rounded-3xl border border-[#988686]/30 shadow-lg sticky top-24 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#988686]/20 pb-3">
-              <span className="font-heading text-sm font-bold text-[#000000] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Filter className="w-4 h-4 text-[#988686]" /> Filters
-              </span>
-              {hasActiveFilters && (
-                <button onClick={clearAllFilters} className="text-[11px] text-[#A0524E] font-bold hover:underline">
-                  Reset
-                </button>
-              )}
-            </div>
-
-            {/* In Stock Only Switch */}
-            <div className="p-3 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold block text-[#000000] dark:text-white">In Stock Only</span>
-                <span className="text-[10px] text-[#988686]">Hide unavailable items</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={inStockOnly}
-                onChange={(e) => setInStockOnly(e.target.checked)}
-                className="w-4 h-4 rounded text-[#5E7A63] cursor-pointer"
-              />
-            </div>
-
-            {/* Categories Facet */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
-                Category
-              </label>
-              <div className="space-y-1 max-h-48 overflow-y-auto pr-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategory('All')}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all flex items-center justify-between ${
-                    selectedCategory === 'All'
-                      ? 'bg-[#000000] dark:bg-[#988686] text-white font-bold'
-                      : 'text-[#988686] hover:bg-[#988686]/10 hover:text-white'
-                  }`}
-                >
-                  <span>All Categories</span>
-                  <span className="font-mono text-[10px]">{products.length}</span>
-                </button>
-                {categoriesList.map(([cat, count]) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all flex items-center justify-between truncate ${
-                      selectedCategory === cat
-                        ? 'bg-[#000000] dark:bg-[#988686] text-white font-bold'
-                        : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10 hover:text-white'
-                    }`}
-                  >
-                    <span className="truncate">{cat}</span>
-                    <span className="font-mono text-[10px] text-[#988686] ml-2 shrink-0">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Brand Filter Facet */}
-            <div className="space-y-2 border-t border-[#988686]/20 pt-4">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
-                Top Brands
-              </label>
-              <div className="space-y-1 max-h-40 overflow-y-auto pr-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBrand('All')}
-                  className={`w-full text-left px-2.5 py-1 rounded-lg transition-all ${
-                    selectedBrand === 'All' ? 'bg-[#988686]/20 text-white font-bold' : 'text-[#988686]'
-                  }`}
-                >
-                  All Brands
-                </button>
-                {brandsList.map(([brand, count]) => (
-                  <button
-                    key={brand}
-                    type="button"
-                    onClick={() => setSelectedBrand(brand)}
-                    className={`w-full text-left px-2.5 py-1 rounded-lg transition-all flex items-center justify-between ${
-                      selectedBrand === brand ? 'bg-[#988686]/20 text-white font-bold' : 'text-[#5C4E4E] dark:text-[#B5A9A9]'
-                    }`}
-                  >
-                    <span className="truncate">{brand}</span>
-                    <span className="font-mono text-[10px] text-[#988686]">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Customer Ratings Facet (Flipkart / Amazon Standard) */}
-            <div className="space-y-2 border-t border-[#988686]/20 pt-4">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9] block">
-                Customer Rating
-              </label>
-              <div className="space-y-1.5 text-xs">
-                {[4.5, 4.0, 3.0].map((stars) => (
-                  <button
-                    key={stars}
-                    type="button"
-                    onClick={() => setMinRating(minRating === stars ? 0 : stars)}
-                    className={`w-full text-left px-3 py-1.5 rounded-xl border transition-all flex items-center justify-between ${
-                      minRating === stars
-                        ? 'border-[#B08A4E] bg-[#B08A4E]/15 text-[#B08A4E] font-bold'
-                        : 'border-[#988686]/20 text-[#5C4E4E] dark:text-[#B5A9A9] hover:border-[#988686]/40'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold">{stars}★</span>
-                      <span className="text-[11px]">& Above</span>
-                    </div>
-                    <div className="flex items-center text-[#B08A4E]">
-                      {[...Array(Math.floor(stars))].map((_, i) => (
-                        <Star key={i} className="w-3 h-3 fill-current" />
-                      ))}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Price Range Slider */}
-            <div className="space-y-3 border-t border-[#988686]/20 pt-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold uppercase tracking-wider text-[#5C4E4E] dark:text-[#B5A9A9]">Daily Rate Cap</span>
-                <span className="font-mono font-bold text-[#000000] dark:text-white">Up to ₹{priceMax.toLocaleString()}</span>
-              </div>
-              <input
-                type="range"
-                min={500}
-                max={50000}
-                step={500}
-                value={priceMax}
-                onChange={(e) => setPriceMax(Number(e.target.value))}
-                className="w-full accent-[#988686] cursor-pointer"
-              />
-              <div className="flex gap-2">
-                {[2000, 8000, 25000].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setPriceMax(val)}
-                    className="flex-1 py-1 rounded-lg glass-panel border border-[#988686]/20 text-[10px] font-mono hover:border-[#988686]/50 text-[#988686]"
-                  >
-                    &lt; ₹{val / 1000}k
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="hidden lg:block lg:col-span-3 glass-panel p-5 rounded-3xl border border-[#988686]/30 shadow-lg sticky top-24 max-h-[85vh] overflow-y-auto">
+            {renderFilterContent()}
           </div>
         )}
 
@@ -854,6 +876,25 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
           )}
         </div>
       </div>
+
+      {/* Mobile Slide-Over Filter Drawer */}
+      {mobileFiltersOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm h-full bg-[#1c1917] dark:bg-[#12100e] p-5 shadow-2xl border-l border-[#988686]/30 overflow-y-auto z-10 flex flex-col justify-between">
+            {renderFilterContent(() => setMobileFiltersOpen(false))}
+            <div className="pt-4 mt-6 border-t border-[#988686]/20 flex gap-3 shrink-0">
+              <Button variant="outline" className="flex-1" onClick={clearAllFilters}>Reset</Button>
+              <Button variant="primary" className="flex-1" onClick={() => setMobileFiltersOpen(false)}>
+                Show {sortedProducts.length} Results
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

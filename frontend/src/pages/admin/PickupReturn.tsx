@@ -480,14 +480,14 @@ export const PickupReturn: React.FC = () => {
             <Badge variant="neutral">Active Returns</Badge>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
             {inspections.map((item) => {
               const isSelected = selectedInspection?.id === item.id;
               return (
                 <Card
                   key={item.id}
                   onClick={() => setSelectedInspection(item)}
-                  className={`cursor-pointer transition-all p-4 ${
+                  className={`cursor-pointer transition-all p-4 shrink-0 w-72 lg:w-auto ${
                     isSelected
                       ? 'border-[#988686] ring-2 ring-[#988686]/30 bg-[#988686]/10 shadow-warm-sm'
                       : 'hover:border-[#988686]/50'
@@ -632,39 +632,42 @@ export const PickupReturn: React.FC = () => {
 
             {/* View Mode Switcher Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-xl bg-[#988686]/10 border border-[#988686]/20">
-              <div className="flex items-center gap-1 text-xs">
+              <div className="flex flex-wrap items-center gap-1 text-xs">
                 <button
                   onClick={() => setViewMode('curtainSlider')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                     viewMode === 'curtainSlider'
                       ? 'bg-black dark:bg-[#988686] text-white shadow-sm'
                       : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-black/5'
                   }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
-                  Split Curtain Slider
+                  <span className="hidden sm:inline">Split Curtain Slider</span>
+                  <span className="sm:hidden">Curtain</span>
                 </button>
                 <button
                   onClick={() => setViewMode('sideBySide')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                     viewMode === 'sideBySide'
                       ? 'bg-black dark:bg-[#988686] text-white shadow-sm'
                       : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-black/5'
                   }`}
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  Side-by-Side
+                  <span className="hidden sm:inline">Side-by-Side</span>
+                  <span className="sm:hidden">Dual View</span>
                 </button>
                 <button
                   onClick={() => setViewMode('heatmap')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                     viewMode === 'heatmap'
                       ? 'bg-black dark:bg-[#988686] text-white shadow-sm'
                       : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-black/5'
                   }`}
                 >
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  Thermal Diff Heatmap
+                  <span className="hidden sm:inline">Thermal Diff Heatmap</span>
+                  <span className="sm:hidden">Heatmap</span>
                 </button>
               </div>
 

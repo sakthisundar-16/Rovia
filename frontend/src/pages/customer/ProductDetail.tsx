@@ -779,6 +779,39 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
           </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Quick Action Bar (Flipkart / Amazon Mobile Standard) */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl border-t border-[#988686]/30 shadow-2xl flex items-center justify-between gap-3">
+        <div className="flex flex-col min-w-0">
+          <span className="text-[9px] text-[#988686] uppercase font-mono leading-none">Total Payable</span>
+          <span className="text-base font-bold font-mono text-[#000000] dark:text-white truncate mt-0.5">
+            ₹{(rentalTotal + depositTotal).toLocaleString()}
+          </span>
+          <span className="text-[9px] text-[#5E7A63] font-medium leading-none">Incl. refundable deposit</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={product.available === 0}
+            leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
+            onClick={handleAddToCart}
+            className="px-3 py-2 text-xs"
+          >
+            Add to Bag
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={product.available === 0}
+            leftIcon={<Zap className="w-3.5 h-3.5" />}
+            onClick={handleRentNow}
+            className="px-4 py-2 text-xs font-bold shadow-warm-md"
+          >
+            Rent Now
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

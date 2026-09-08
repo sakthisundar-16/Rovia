@@ -11,7 +11,8 @@ import {
   Sparkles,
   X,
   Eye,
-  Check
+  Check,
+  Menu,
 } from 'lucide-react';
 import { useAuth, Role } from '../../context/AuthContext';
 import { BarcodeScannerModal } from '../common/BarcodeScannerModal';
@@ -22,6 +23,7 @@ interface AdminTopbarProps {
   title?: string;
   mode: Role;
   onNavigate: (tab: string) => void;
+  onToggleMobileSidebar?: () => void;
 }
 
 interface NotificationItem {
@@ -36,7 +38,12 @@ interface NotificationItem {
   orderId?: string;
 }
 
-export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Dashboard', mode, onNavigate }) => {
+export const AdminTopbar: React.FC<AdminTopbarProps> = ({
+  title = 'Operations Dashboard',
+  mode,
+  onNavigate,
+  onToggleMobileSidebar,
+}) => {
   const { user } = useAuth();
   const [branch, setBranch] = useState('Mumbai HQ Main Atelier');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -143,15 +150,24 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
   const roleLabel = mode === 'admin' ? 'Platform Admin' : 'Renter Ops Manager';
 
   return (
-    <header className="h-20 sticky top-0 z-30 glass-nav border-b border-[#5C4E4E]/20 px-4 sm:px-6 flex items-center justify-between transition-colors">
-      {/* Title & Global Search */}
-      <div className="flex items-center gap-6">
-        <div>
-          <h1 className="text-lg sm:text-xl font-heading font-bold text-[#000000] dark:text-white tracking-tight">
+    <header className="h-16 sm:h-20 sticky top-0 z-30 glass-nav border-b border-[#5C4E4E]/20 px-3 sm:px-6 flex items-center justify-between transition-colors gap-2">
+      {/* Title & Mobile Hamburger */}
+      <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+        {onToggleMobileSidebar && (
+          <button
+            onClick={onToggleMobileSidebar}
+            className="lg:hidden p-2 rounded-xl border border-[#988686]/30 text-[#000000] dark:text-white hover:bg-[#988686]/15 transition-all shrink-0"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-lg font-heading font-bold text-[#000000] dark:text-white tracking-tight truncate">
             {title}
           </h1>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#988686]">
-            {mode === 'admin' ? 'Platform Admin Console' : 'Renter Operations Console'}
+          <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-[#988686] truncate block">
+            {mode === 'admin' ? 'Platform Admin' : 'Renter Operations'}
           </span>
         </div>
 
@@ -166,15 +182,15 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Quick QR Scanner Button */}
         <button
           onClick={() => setShowQrModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] dark:bg-[#988686] text-white text-xs font-bold shadow-warm-sm hover:opacity-90 transition-all"
-          title="Scan Customer QR Code to Approve Rental"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#000000] dark:bg-[#988686] text-white text-xs font-bold shadow-warm-sm hover:opacity-90 transition-all shrink-0"
+          title="Scan Customer QR Code"
         >
           <QrCode className="w-4 h-4" />
-          <span className="hidden sm:inline">Scan Customer QR</span>
+          <span className="hidden sm:inline">Scan QR</span>
         </button>
 
         {/* Branch Switcher */}
@@ -195,7 +211,7 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
         <div className="relative">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className={`relative p-2.5 rounded-xl border transition-all flex items-center justify-center ${
+            className={`relative p-2 sm:p-2.5 rounded-xl border transition-all flex items-center justify-center ${
               unreadCount > 0
                 ? 'bg-[#A0524E]/10 border-[#A0524E]/40 text-[#A0524E] shadow-sm'
                 : 'glass-panel border-[#988686]/30 text-[#988686] hover:bg-[#988686]/10'
@@ -204,15 +220,15 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ title = 'Operations Da
           >
             <Bell className={`w-4 h-4 ${unreadCount > 0 ? 'animate-bounce' : ''}`} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] px-1 rounded-full bg-[#A0524E] text-white text-[10px] font-black font-mono flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-[#161313]">
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] sm:min-w-[20px] h-[18px] sm:h-[20px] px-1 rounded-full bg-[#A0524E] text-white text-[9px] sm:text-[10px] font-black font-mono flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-[#161313]">
                 {unreadCount}
               </span>
             )}
           </button>
 
-          {/* Notifications Dropdown Modal */}
+          {/* Notifications Dropdown Modal (Clamped for Mobile) */}
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 glass-panel rounded-2xl border border-[#988686]/40 shadow-2xl p-4 z-50 text-xs animate-fadeIn bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl">
+            <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] sm:w-96 max-w-sm glass-panel rounded-2xl border border-[#988686]/40 shadow-2xl p-4 z-50 text-xs animate-fadeIn bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-[#5C4E4E]/20 pb-3 mb-3">
                 <div className="flex items-center gap-2">

@@ -47,9 +47,12 @@ const MainAppContent: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | undefined>(undefined);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>(undefined);
 
+  const [adminMobileOpen, setAdminMobileOpen] = useState(false);
+
   const viewStorefront = () => {
     setCustomerTab('catalog');
     switchMode('customer');
+    setAdminMobileOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -65,6 +68,7 @@ const MainAppContent: React.FC = () => {
   const handleAdminNavigate = (tab: string, id?: string) => {
     setAdminTab(tab);
     if (id) setSelectedOrderId(id);
+    setAdminMobileOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -96,11 +100,21 @@ const MainAppContent: React.FC = () => {
   // ── ADMIN CONSOLE (dark navy navbar) ────────────────────
   if (mode === 'admin') {
     return (
-      <div className="min-h-screen flex antialiased">
-        <AdminNavbar currentTab={adminTab} onNavigate={handleAdminNavigate} />
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          <AdminTopbar mode="admin" title={getTabTitle(adminTab)} onNavigate={handleAdminNavigate} />
-          <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
+      <div className="min-h-screen flex antialiased w-full overflow-x-hidden">
+        <AdminNavbar
+          currentTab={adminTab}
+          onNavigate={handleAdminNavigate}
+          mobileOpen={adminMobileOpen}
+          onCloseMobile={() => setAdminMobileOpen(false)}
+        />
+        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overflow-x-hidden">
+          <AdminTopbar
+            mode="admin"
+            title={getTabTitle(adminTab)}
+            onNavigate={handleAdminNavigate}
+            onToggleMobileSidebar={() => setAdminMobileOpen(prev => !prev)}
+          />
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
             {adminTab === 'renters' && <Renters />}
             {adminTab === 'payouts' && <Payouts />}
@@ -124,15 +138,22 @@ const MainAppContent: React.FC = () => {
   // ── RENTER CONSOLE (dark charcoal amber navbar) ──────────
   if (mode === 'renter') {
     return (
-      <div className="min-h-screen flex antialiased">
+      <div className="min-h-screen flex antialiased w-full overflow-x-hidden">
         <RenterNavbar
           currentTab={adminTab}
           onNavigate={handleAdminNavigate}
           onViewStorefront={viewStorefront}
+          mobileOpen={adminMobileOpen}
+          onCloseMobile={() => setAdminMobileOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          <AdminTopbar mode="renter" title={getTabTitle(adminTab)} onNavigate={handleAdminNavigate} />
-          <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
+        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overflow-x-hidden">
+          <AdminTopbar
+            mode="renter"
+            title={getTabTitle(adminTab)}
+            onNavigate={handleAdminNavigate}
+            onToggleMobileSidebar={() => setAdminMobileOpen(prev => !prev)}
+          />
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
             {adminTab === 'products' && <Products />}
             {adminTab === 'orders' && <Orders selectedOrderId={selectedOrderId} />}

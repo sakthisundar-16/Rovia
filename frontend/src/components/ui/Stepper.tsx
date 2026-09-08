@@ -57,7 +57,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep, onStepClic
 
             {idx < steps.length - 1 && (
               <div
-                className={`flex-1 h-[2px] mx-4 transition-all duration-300 ${
+                className={`flex-1 h-[2px] mx-2 sm:mx-4 transition-all duration-300 ${
                   currentStep > step.id ? 'bg-[#5E7A63]' : 'bg-[#D1D0D0]/40 dark:bg-[#5C4E4E]/30'
                 }`}
               />
