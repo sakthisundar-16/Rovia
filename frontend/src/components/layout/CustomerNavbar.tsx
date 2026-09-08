@@ -10,6 +10,8 @@ import {
   Search,
   LogOut,
   Award,
+  Bell,
+  Check,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +25,34 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNa
   const { items } = useCart();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [customerNotifs, setCustomerNotifs] = useState([
+    {
+      id: 'cn-1',
+      title: 'Order Status: Ready for Pickup',
+      message: 'Your rental reservation has been verified. Pick up at Mumbai HQ Atelier.',
+      time: '12m ago',
+      read: false,
+      tab: 'my-rentals',
+    },
+    {
+      id: 'cn-2',
+      title: 'OpenCV Damage Inspection: Pristine',
+      message: '0 defects found during check-in. 100% deposit refund (₹25,000) processed.',
+      time: '1h ago',
+      read: false,
+      tab: 'my-rentals',
+    },
+    {
+      id: 'cn-3',
+      title: 'Promotional Reward Unlocked',
+      message: 'Use VIP promo code ROVIAVIP to get 15% discount on camera rigs.',
+      time: '1d ago',
+      read: true,
+      tab: 'catalog',
+    }
+  ]);
+  const unreadCustCount = customerNotifs.filter(n => !n.read).length;
 
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const isLoggedIn = user && user.id !== 'guest';
@@ -94,6 +124,72 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNa
             )}
           </button>
 
+          {/* Customer Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className={`relative flex items-center gap-1.5 p-2 rounded-lg text-xs font-semibold transition-all ${
+                unreadCustCount > 0
+                  ? 'text-[#A0524E] bg-[#A0524E]/10 border border-[#A0524E]/30'
+                  : 'text-[#5C4E4E] dark:text-[#B5A9A9] hover:bg-[#988686]/10 hover:text-[#000000] dark:hover:text-white'
+              }`}
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCustCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#A0524E] text-white text-[9px] font-bold flex items-center justify-center shadow-md animate-pulse">
+                  {unreadCustCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 glass-panel rounded-2xl border border-[#988686]/40 shadow-2xl p-4 z-50 text-xs animate-fadeIn bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl">
+                <div className="flex items-center justify-between border-b border-[#5C4E4E]/20 pb-2.5 mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-[#988686]" />
+                    <span className="font-heading font-bold text-xs uppercase tracking-wider text-[#000000] dark:text-white">
+                      Rental Alerts ({unreadCustCount})
+                    </span>
+                  </div>
+                  {unreadCustCount > 0 && (
+                    <button
+                      onClick={() => setCustomerNotifs(prev => prev.map(n => ({ ...n, read: true })))}
+                      className="text-[10px] text-[#988686] hover:text-[#000000] dark:hover:text-white font-medium"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto">
+                  {customerNotifs.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        setCustomerNotifs(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+                        setNotificationsOpen(false);
+                        onNavigate(n.tab);
+                      }}
+                      className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        n.read
+                          ? 'bg-[#988686]/5 border-[#988686]/15 opacity-70'
+                          : 'bg-[#988686]/10 border-[#988686]/30 hover:border-[#988686]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="font-bold text-[11px] text-[#000000] dark:text-white">{n.title}</span>
+                        <span className="text-[9px] text-[#988686] shrink-0 font-mono">{n.time}</span>
+                      </div>
+                      <p className="text-[10px] text-[#5C4E4E] dark:text-[#B5A9A9] mt-0.5 leading-tight">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Auth */}
           {isLoggedIn ? (
             <>
@@ -149,6 +245,32 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNa
               {link.icon} {link.label}
             </button>
           ))}
+          {/* Mobile Notifications Preview */}
+          <div className="pt-2 border-t border-[#988686]/20">
+            <div className="flex items-center justify-between text-xs font-bold text-[#5C4E4E] dark:text-[#B5A9A9] mb-2">
+              <span className="flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-[#988686]" /> Notifications
+              </span>
+              {unreadCustCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[#A0524E] text-white text-[9px] font-bold">
+                  {unreadCustCount} new
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+              {customerNotifs.map(n => (
+                <div
+                  key={n.id}
+                  onClick={() => { onNavigate(n.tab); setMobileOpen(false); }}
+                  className="p-2 rounded-lg bg-[#988686]/10 text-left cursor-pointer hover:bg-[#988686]/20 transition-colors"
+                >
+                  <p className="text-[11px] font-bold text-[#000000] dark:text-white leading-tight">{n.title}</p>
+                  <p className="text-[10px] text-[#5C4E4E] dark:text-[#B5A9A9] truncate">{n.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between pt-2 border-t border-[#988686]/20">
             <button
               onClick={() => { onNavigate('cart'); setMobileOpen(false); }}

@@ -7,6 +7,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { CustomerNavbar } from './components/layout/CustomerNavbar';
 import { RenterNavbar } from './components/layout/RenterNavbar';
 import { AdminNavbar } from './components/layout/AdminNavbar';
+import { AdminTopbar } from './components/layout/AdminTopbar';
 import { CustomerFooter } from './components/layout/CustomerFooter';
 
 // Customer Pages
@@ -72,12 +73,33 @@ const MainAppContent: React.FC = () => {
     return <Splash onFinish={() => setShowSplash(false)} />;
   }
 
+  const getTabTitle = (tab: string) => {
+    switch (tab) {
+      case 'dashboard': return 'Operations Dashboard';
+      case 'orders': return 'Rental Orders & QR Approvals';
+      case 'products': return 'Product & Rate Matrix';
+      case 'pickup-return': return 'OpenCV Return Damage Verification';
+      case 'deposits': return 'Security Deposits & Escrow';
+      case 'late-fees': return 'Automated Late Fee Engine';
+      case 'payouts': return 'Earnings & Bank Settlements';
+      case 'quotations': return 'Rental Quotations';
+      case 'renters': return 'Partner Renter Network';
+      case 'customers': return 'Customer Directory & Trust Scores';
+      case 'disputes': return 'Damage Claims & Resolution';
+      case 'reports': return 'Financial & Inventory Analytics';
+      case 'settings': return 'Operations Settings';
+      case 'profile': return 'My Account Profile';
+      default: return 'Operations Console';
+    }
+  };
+
   // ── ADMIN CONSOLE (dark navy navbar) ────────────────────
   if (mode === 'admin') {
     return (
       <div className="min-h-screen flex antialiased">
         <AdminNavbar currentTab={adminTab} onNavigate={handleAdminNavigate} />
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          <AdminTopbar mode="admin" title={getTabTitle(adminTab)} onNavigate={handleAdminNavigate} />
           <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
             {adminTab === 'renters' && <Renters />}
@@ -109,6 +131,7 @@ const MainAppContent: React.FC = () => {
           onViewStorefront={viewStorefront}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          <AdminTopbar mode="renter" title={getTabTitle(adminTab)} onNavigate={handleAdminNavigate} />
           <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
             {adminTab === 'products' && <Products />}
