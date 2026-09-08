@@ -36,21 +36,29 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
             Reserve Hasselblad cameras, Caterpillar excavators, Vera Wang haute couture, Tesla Cybertrucks, and medical suites. Flexible rental windows with 100% refundable deposit protection.
           </p>
 
-          {/* Single CTA — Get Started → Auth */}
-          <div className="flex flex-col items-center justify-center gap-3 pt-4">
+          {/* CTAs — Explore Catalog & Sign In */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button
               size="lg"
               variant="primary"
               rightIcon={<ArrowRight className="w-5 h-5" />}
-              onClick={() => onNavigate('auth')}
-              className="px-12 py-4 text-base font-bold mx-auto"
+              onClick={() => onNavigate('catalog')}
+              className="px-8 py-4 text-base font-bold shadow-lg"
             >
-              Get Started
+              Explore Rental Catalog
             </Button>
-            <span className="text-[#988686] text-xs font-mono tracking-widest text-center">
-              Customer · Renter · Admin Portals
-            </span>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => onNavigate('auth')}
+              className="px-8 py-4 text-base font-bold"
+            >
+              Sign In / Partner Portals
+            </Button>
           </div>
+          <span className="text-[#988686] text-xs font-mono tracking-widest text-center block">
+            Customer · Renter · Admin Portals
+          </span>
 
           <div className="pt-8 border-t border-[#988686]/20 flex items-center justify-center gap-8 text-xs font-mono text-[#988686] uppercase tracking-widest">
             <span>RENT</span>
@@ -75,15 +83,15 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { icon: <Camera className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Cameras & Cinema' },
-            { icon: <Wrench className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Heavy Machinery' },
-            { icon: <Shirt className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Designer Fashion' },
-            { icon: <Car className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Vehicles & Mobility' },
+            { icon: <Camera className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Cameras & Cinema', category: 'Cameras & Lenses' },
+            { icon: <Wrench className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Heavy Machinery', category: 'Heavy Machinery' },
+            { icon: <Shirt className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Designer Fashion', category: 'Designer Fashion' },
+            { icon: <Car className="w-8 h-8 text-[#988686] mx-auto mb-2" />, label: 'Vehicles & Mobility', category: 'Vehicles & Mobility' },
           ].map((cat) => (
             <Card
               key={cat.label}
-              className="p-4 text-center cursor-pointer hover:border-[#988686] transition-all"
-              onClick={() => onNavigate('auth')}
+              className="p-4 text-center cursor-pointer hover:border-[#988686] hover:shadow-lg transition-all"
+              onClick={() => onNavigate('catalog')}
             >
               {cat.icon}
               <h3 className="font-bold text-xs text-[#000000] dark:text-white">{cat.label}</h3>
@@ -101,8 +109,8 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
               Featured Rental Items
             </h2>
           </div>
-          <Button variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={() => onNavigate('auth')}>
-            Sign In to Browse All
+          <Button variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={() => onNavigate('catalog')}>
+            Explore All 300+ Products
           </Button>
         </div>
 
@@ -110,8 +118,8 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
           {UNIVERSAL_PRODUCTS.slice(0, 6).map((product: Product) => (
             <Card
               key={product.id}
-              className="group cursor-pointer flex flex-col justify-between"
-              onClick={() => onNavigate('auth')}
+              className="group cursor-pointer flex flex-col justify-between hover:border-[#988686] hover:shadow-xl transition-all"
+              onClick={() => onNavigate('product-detail', product.id)}
             >
               <div className="space-y-4">
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/40">
