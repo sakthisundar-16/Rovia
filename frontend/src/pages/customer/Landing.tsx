@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Camera, Car, Wrench, Shirt, MapPin } from 'lucide-react';
+import { ArrowRight, Camera, Car, Wrench, Shirt, MapPin, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -12,68 +12,98 @@ interface LandingProps {
 export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
   return (
     <div className="w-full space-y-24 pb-16 page-transition">
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center rounded-3xl overflow-hidden glass-panel border border-[#988686]/30 p-8 sm:p-16 my-4 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D0B0B]/90 via-[#161313]/70 to-[#5C4E4E]/20 z-0 pointer-events-none" />
+      {/* Hero Section — Enhanced High-Contrast Luxury Atelier */}
+      <section className="relative min-h-[85vh] flex items-center justify-center rounded-3xl overflow-hidden bg-[#0A0909] text-white border border-[#988686]/40 p-6 sm:p-12 lg:p-16 my-4 shadow-2xl">
+        {/* Cinematic Backdrop Image with Smooth Ambient Scale */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-overlay z-0"
+          className="absolute inset-0 bg-cover bg-center opacity-45 scale-105 pointer-events-none"
           style={{
             backgroundImage: `url('/landing-hero.jpg')`,
           }}
         />
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-          <Badge variant="neutral" icon={true} className="px-4 py-1 text-xs">
-            Universal Product & Property Rental Atelier
-          </Badge>
+        {/* Multi-layer Dark Radial and Directional Scrim to Guarantee 100% Typography Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0909] via-[#0A0909]/85 to-[#0A0909]/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/30 via-black/80 to-[#0A0909] pointer-events-none" />
 
-          <h1 className="font-heading text-5xl sm:text-7xl font-bold tracking-tight text-white leading-tight">
-            Rent Anything, Anywhere <br />
-            <span className="text-[#988686] italic font-normal">From Tech & Vehicles to Verified Homes & Studios</span>
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-7">
+          {/* Atelier Verified Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-xs font-semibold text-white tracking-wide shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-[#5E7A63] animate-pulse" />
+            <span>Universal Product & Property Rental Atelier</span>
+            <span className="text-[#D1D0D0]">•</span>
+            <span className="text-[#D1D0D0] font-mono">ROVIA Verified</span>
+          </div>
+
+          {/* Primary High-Contrast Heading */}
+          <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.12] drop-shadow-2xl">
+            Rent Anything, Anywhere
+            <span className="block mt-3 text-2xl sm:text-3xl lg:text-4xl font-light text-[#EDEBEB] tracking-normal drop-shadow-lg">
+              From Production Rigs & Supercars to Verified Homes & Studios
+            </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-[#D1D0D0] max-w-2xl mx-auto leading-relaxed font-light">
-            Reserve apartments near Nadar Saraswathi College, Hasselblad camera rigs, luxury villas, and mobility fleets. Explore interactive radius search with nearby facility intelligence.
+          {/* High-Contrast Description */}
+          <p className="text-base sm:text-lg text-[#EDEBEB] max-w-2xl mx-auto leading-relaxed font-normal drop-shadow-md">
+            Reserve apartments near Nadar Saraswathi College, Hasselblad medium format cameras, luxury villas, and mobility fleets with interactive radius search and OpenCV verified return inspection.
           </p>
 
-          {/* CTAs — Explore Catalog, Map Discovery & Sign In */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
-            <Button
-              size="lg"
-              variant="primary"
-              rightIcon={<ArrowRight className="w-5 h-5" />}
+          {/* Trust Highlights Strip (Flipkart / Airbnb Style) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-3xl mx-auto pt-2 pb-1">
+            <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white font-medium shadow-sm">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>100% Escrow Refund</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white font-medium shadow-sm">
+              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+              <span>OpenCV Damage AI</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white font-medium shadow-sm">
+              <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Property Map Radius</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white font-medium shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>Razorpay Verified</span>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
+            <button
               onClick={() => onNavigate('catalog')}
-              className="px-6 py-4 text-base font-bold shadow-lg"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white text-black hover:bg-[#EDEBEB] font-bold text-base shadow-2xl flex items-center justify-center gap-2.5 fk-btn-press transition-all"
             >
-              Explore Products
-            </Button>
+              <span>Explore 300+ Products</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
             <button
               onClick={() => onNavigate('property-map')}
-              className="px-6 py-3.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 text-base font-bold flex items-center gap-2 transition shadow-lg active:scale-95"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-[#5E7A63] hover:bg-[#4E6753] text-white font-bold text-base shadow-2xl flex items-center justify-center gap-2.5 fk-btn-press transition-all"
             >
-              <MapPin className="w-5 h-5 text-rose-400" />
+              <MapPin className="w-5 h-5 text-white" />
               <span>Find Properties on Map</span>
             </button>
-            <Button
-              size="lg"
-              variant="outline"
+            <button
               onClick={() => onNavigate('auth')}
-              className="px-6 py-4 text-base font-bold"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md font-bold text-base flex items-center justify-center gap-2 fk-btn-press transition-all"
             >
-              Partner Portals
-            </Button>
+              <span>Partner Portals</span>
+            </button>
           </div>
-          <span className="text-[#988686] text-xs font-mono tracking-widest text-center block">
+
+          <span className="text-[#D1D0D0] text-xs font-mono tracking-widest text-center block pt-1">
             Customer · Renter · Admin Portals
           </span>
 
-          <div className="pt-8 border-t border-[#988686]/20 flex items-center justify-center gap-8 text-xs font-mono text-[#988686] uppercase tracking-widest">
+          {/* Lifecycle Flow Ribbon */}
+          <div className="pt-6 border-t border-white/15 flex items-center justify-center gap-6 sm:gap-8 text-xs font-mono text-[#D1D0D0] uppercase tracking-[0.2em] font-semibold">
             <span>RENT</span>
-            <span>•</span>
+            <span className="text-emerald-400">•</span>
             <span>USE</span>
-            <span>•</span>
+            <span className="text-emerald-400">•</span>
             <span>RETURN</span>
-            <span>•</span>
+            <span className="text-emerald-400">•</span>
             <span>REUSE</span>
           </div>
         </div>
