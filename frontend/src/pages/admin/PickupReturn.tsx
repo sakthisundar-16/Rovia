@@ -140,10 +140,11 @@ export const PickupReturn: React.FC = () => {
   const [activeScanAngle, setActiveScanAngle] = useState<number | null>(null);
 
   // 4-Angle Multi-Angle State
-  const [selectedAngle, setSelectedAngle] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedAngle, setSelectedAngle] = useState<1 | 2 | 3 | 4>(2);
   const [viewMode, setViewMode] = useState<'sideBySide' | 'curtainSlider' | 'heatmap' | 'contours'>('curtainSlider');
-  const [sliderPosition, setSliderPosition] = useState<number>(50); // Curtain slider position %
+  const [sliderPosition, setSliderPosition] = useState<number>(15); // Curtain slider position % (15% so return photo with defects is prominently exposed)
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showDefectsOverlay, setShowDefectsOverlay] = useState(true);
 
   // Live Camera Snapshot State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -291,6 +292,7 @@ export const PickupReturn: React.FC = () => {
         isScanned: true,
         isDamaged: false,
         matchScore: 99.4,
+        damagePercentage: 0.1,
         defects: [],
         severity: 'PRISTINE',
       },
@@ -308,6 +310,7 @@ export const PickupReturn: React.FC = () => {
         isScanned: true,
         isDamaged: presetKey === 'crack',
         matchScore: presetKey === 'crack' ? 62.4 : 98.8,
+        damagePercentage: presetKey === 'crack' ? 5.2 : 0.2,
         defects: presetKey === 'crack' ? [p.defects[2] as DefectBox] : [],
         severity: presetKey === 'crack' ? 'SEVERE' : 'PRISTINE',
       },
@@ -316,6 +319,7 @@ export const PickupReturn: React.FC = () => {
         isScanned: true,
         isDamaged: false,
         matchScore: 99.1,
+        damagePercentage: 0.1,
         defects: [],
         severity: 'PRISTINE',
       }
@@ -337,7 +341,75 @@ export const PickupReturn: React.FC = () => {
       angles: newAngles,
     });
 
-    showToast('Preset Loaded', `${p.label} loaded for 4-angle inspection.`, 'info');
+    if (p.damage) {
+      setSelectedAngle(2);
+      setSliderPosition(15);
+      setShowDefectsOverlay(true);
+    }
+
+    showToast('Preset Loaded', `${p.label} loaded. ${p.damage ? 'Viewing Angle 02 damaged areas.' : 'All angles clean.'}`, 'info');
+  };
+
+  // Scan currently selected angle with OpenCV
+  const handleScanCurrentAngle = async () => {
+    setIsScanning(true);
+    setScanProgress(0);
+    setActiveScanAngle(selectedAngle);
+
+    for (let p = 20; p <= 100; p += 20) {
+      setScanProgress(p);
+      await new Promise(res => setTimeout(res, 90));
+    }
+
+    setIsScanning(false);
+    setActiveScanAngle(null);
+
+    const preset = PRESET_SAMPLES[activePreset === 'custom' ? 'scratch' : activePreset];
+    const isThisDamaged = preset.damage;
+    const defectsThis = isThisDamaged ? (preset.defects as DefectBox[]) : [];
+
+    const updatedAngle: AngleInspectionData = {
+      ...angleData[selectedAngle],
+      isScanned: true,
+      isDamaged: isThisDamaged,
+      matchScore: isThisDamaged ? preset.matchScore : 99.4,
+      damagePercentage: isThisDamaged ? preset.damagePercentage : 0.1,
+      defects: defectsThis,
+      severity: isThisDamaged ? preset.severity : 'PRISTINE',
+    };
+
+    const newAngles = {
+      ...angleData,
+      [selectedAngle]: updatedAngle,
+    };
+    setAngleData(newAngles);
+
+    if (isThisDamaged) {
+      setSliderPosition(15);
+      setShowDefectsOverlay(true);
+    }
+
+    const totalDefects = (newAngles[1].defects.length + newAngles[2].defects.length + newAngles[3].defects.length + newAngles[4].defects.length);
+    const avgMatch = Math.round((newAngles[1].matchScore + newAngles[2].matchScore + newAngles[3].matchScore + newAngles[4].matchScore) / 4 * 10) / 10;
+
+    setCompositeScanResult({
+      engine: 'OpenCV v4.8 Computer Vision Pipeline',
+      isDamaged: isThisDamaged,
+      severity: updatedAngle.severity,
+      compositeMatchScore: avgMatch,
+      totalDefectCount: totalDefects,
+      suggestedDeduction: isThisDamaged ? preset.suggestedDeduction : 0,
+      verdict: isThisDamaged
+        ? `ALERT: Damage detected on Angle 0${selectedAngle}! ${defectsThis.length} defect zones flagged.`
+        : `PASSED: Angle 0${selectedAngle} verified clean. No damage detected.`,
+      angles: newAngles,
+    });
+
+    showToast(
+      isThisDamaged ? `OpenCV Flagged: ${defectsThis.length} Defects on Angle 0${selectedAngle}` : 'Angle Pristine',
+      isThisDamaged ? 'Defect bounding boxes permanently pinned on returned picture.' : 'No surface scratches found.',
+      isThisDamaged ? 'error' : 'success'
+    );
   };
 
   // Run 360° Multi-Angle OpenCV Scan (Sequentially scans Angles 1 -> 4)
@@ -345,21 +417,80 @@ export const PickupReturn: React.FC = () => {
     setIsScanning(true);
     setScanProgress(0);
 
+    const preset = PRESET_SAMPLES[activePreset === 'custom' ? 'scratch' : activePreset];
+
+    const newAngles: Record<number, AngleInspectionData> = {
+      1: {
+        ...angleData[1],
+        isScanned: true,
+        isDamaged: false,
+        matchScore: 99.4,
+        damagePercentage: 0.1,
+        defects: [],
+        severity: 'PRISTINE',
+      },
+      2: {
+        ...angleData[2],
+        isScanned: true,
+        isDamaged: preset.damage,
+        matchScore: preset.matchScore,
+        damagePercentage: preset.damagePercentage,
+        defects: preset.defects as DefectBox[],
+        severity: preset.severity,
+      },
+      3: {
+        ...angleData[3],
+        isScanned: true,
+        isDamaged: activePreset === 'crack',
+        matchScore: activePreset === 'crack' ? 62.4 : 98.8,
+        damagePercentage: activePreset === 'crack' ? 5.2 : 0.2,
+        defects: activePreset === 'crack' ? [preset.defects[2] as DefectBox] : [],
+        severity: activePreset === 'crack' ? 'SEVERE' : 'PRISTINE',
+      },
+      4: {
+        ...angleData[4],
+        isScanned: true,
+        isDamaged: false,
+        matchScore: 99.1,
+        damagePercentage: 0.1,
+        defects: [],
+        severity: 'PRISTINE',
+      }
+    };
+
     const anglesToScan = [1, 2, 3, 4];
     for (let i = 0; i < anglesToScan.length; i++) {
       const angleNum = anglesToScan[i];
       setActiveScanAngle(angleNum);
-      setSelectedAngle(angleNum as 1 | 2 | 3 | 4);
       setScanProgress((i + 1) * 25);
-      await new Promise(res => setTimeout(res, 450));
+      await new Promise(res => setTimeout(res, 350));
     }
 
     setIsScanning(false);
     setActiveScanAngle(null);
+    setAngleData(newAngles);
 
-    const preset = PRESET_SAMPLES[activePreset === 'custom' ? 'scratch' : activePreset];
-    const totalDefects = preset.defects.length;
-    const avgMatch = Math.round((99.4 + preset.matchScore + 98.8 + 99.1) / 4 * 10) / 10;
+    // CRITICAL: Determine which angle has detected damage and permanently focus on it!
+    // Never leave the viewer on an empty angle where defects disappear!
+    let targetAngle: 1 | 2 | 3 | 4 = 1;
+    if (newAngles[2].isDamaged) {
+      targetAngle = 2;
+    } else if (newAngles[3].isDamaged) {
+      targetAngle = 3;
+    } else if (newAngles[1].isDamaged) {
+      targetAngle = 1;
+    } else if (newAngles[4].isDamaged) {
+      targetAngle = 4;
+    }
+
+    setSelectedAngle(targetAngle);
+    if (newAngles[targetAngle].isDamaged) {
+      setSliderPosition(15);
+      setShowDefectsOverlay(true);
+    }
+
+    const totalDefects = (newAngles[1].defects.length + newAngles[2].defects.length + newAngles[3].defects.length + newAngles[4].defects.length);
+    const avgMatch = Math.round((newAngles[1].matchScore + newAngles[2].matchScore + newAngles[3].matchScore + newAngles[4].matchScore) / 4 * 10) / 10;
 
     setCompositeScanResult({
       engine: 'OpenCV v4.8 Multi-Angle Computer Vision Suite',
@@ -369,12 +500,14 @@ export const PickupReturn: React.FC = () => {
       totalDefectCount: totalDefects,
       suggestedDeduction: preset.suggestedDeduction,
       verdict: preset.verdict,
-      angles: angleData,
+      angles: newAngles,
     });
 
     showToast(
-      preset.damage ? 'OpenCV Alert: Damage Detected' : 'OpenCV Verified: Pristine',
-      preset.verdict,
+      preset.damage ? `OpenCV Alert: Damage Detected on Angle 0${targetAngle}` : 'OpenCV Verified: Pristine',
+      preset.damage
+        ? `Flagged ${totalDefects} defect zones. View focused on Angle 0${targetAngle}. Defect markers permanently locked.`
+        : preset.verdict,
       preset.damage ? 'error' : 'success'
     );
   };
@@ -566,7 +699,11 @@ export const PickupReturn: React.FC = () => {
                     }}
                     className={`p-3 rounded-2xl border text-left transition-all relative ${
                       isSelected
-                        ? 'border-[#988686] ring-2 ring-[#988686]/40 bg-[#988686]/15 shadow-warm-sm'
+                        ? angle.isDamaged
+                          ? 'border-[#A0524E] ring-2 ring-[#A0524E]/50 bg-[#A0524E]/15 shadow-warm-md'
+                          : 'border-[#988686] ring-2 ring-[#988686]/40 bg-[#988686]/15 shadow-warm-sm'
+                        : angle.isDamaged
+                        ? 'border-[#A0524E]/50 bg-[#A0524E]/10 hover:border-[#A0524E]'
                         : 'glass-panel border-[#988686]/20 hover:border-[#988686]/40'
                     }`}
                   >
@@ -577,7 +714,9 @@ export const PickupReturn: React.FC = () => {
                       {isScanningThis ? (
                         <RefreshCw className="w-3 h-3 text-[#988686] animate-spin" />
                       ) : angle.isDamaged ? (
-                        <span className="w-2 h-2 rounded-full bg-[#A0524E] animate-ping" />
+                        <span className="flex items-center gap-1 text-[8px] font-bold text-white bg-[#A0524E] px-1.5 py-0.5 rounded shadow animate-pulse">
+                          ⚠️ {angle.defects.length} DEFECTS
+                        </span>
                       ) : (
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#5E7A63]" />
                       )}
@@ -585,8 +724,12 @@ export const PickupReturn: React.FC = () => {
                     <p className="font-bold text-xs text-[#000000] dark:text-white mt-1 truncate">
                       {num === 1 ? 'Front Optics' : num === 2 ? 'Right Chassis' : num === 3 ? 'Left I/O Ports' : 'Base/Hardcase'}
                     </p>
-                    <p className="text-[10px] text-[#988686] truncate mt-0.5">
-                      {angle.isDamaged ? `Defect Flagged (${angle.defects.length})` : 'Clean (99%+)'}
+                    <p className="text-[10px] truncate mt-0.5 font-semibold">
+                      {angle.isDamaged ? (
+                        <span className="text-[#A0524E]">⚠️ Flagged ({angle.defects.length} contours)</span>
+                      ) : (
+                        <span className="text-[#5E7A63]">Clean (99%+)</span>
+                      )}
                     </p>
                   </button>
                 );
@@ -754,17 +897,71 @@ export const PickupReturn: React.FC = () => {
             {/* VIEW MODE 1: INTERACTIVE SPLIT CURTAIN SLIDER                             */}
             {/* ========================================================================= */}
             {viewMode === 'curtainSlider' && !isCameraActive && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-[#988686]">
-                  <span className="font-bold flex items-center gap-1 text-[#5E7A63]">
-                    ← Baseline Handover (Clean)
-                  </span>
-                  <span className="font-mono font-bold text-[#000000] dark:text-white">
-                    Divider: {sliderPosition}%
-                  </span>
-                  <span className="font-bold flex items-center gap-1 text-[#A0524E]">
-                    Return Capture (Inspected) →
-                  </span>
+              <div className="space-y-3">
+                {/* Persistent Damage Alert Banner on Current Angle */}
+                {currentAngle.isDamaged && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-[#A0524E]/15 border border-[#A0524E]/40 text-xs animate-fadeIn">
+                    <span className="flex items-center gap-2 text-[#A0524E] font-bold">
+                      <AlertTriangle className="w-4 h-4 shrink-0 animate-bounce" />
+                      <span>
+                        OpenCV Flagged <strong>{currentAngle.defects.length} Defect Contour(s)</strong> on {currentAngle.label}. Highlighting is permanently active on this picture.
+                      </span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowDefectsOverlay(!showDefectsOverlay)}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#A0524E] bg-[#A0524E]/20 text-[#A0524E] hover:bg-[#A0524E]/30"
+                      >
+                        {showDefectsOverlay ? '✓ Defect Markers: ON' : 'Show Defect Markers'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#988686]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold flex items-center gap-1 text-[#5E7A63]">
+                      ← Baseline Handover (Clean)
+                    </span>
+                    <span className="text-[#988686]">|</span>
+                    <span className="font-bold flex items-center gap-1 text-[#A0524E]">
+                      Return Capture (Inspected) →
+                    </span>
+                  </div>
+
+                  {/* Quick Slider Position Buttons */}
+                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                    <span className="text-[#988686] hidden sm:inline">Slider:</span>
+                    <button
+                      type="button"
+                      onClick={() => setSliderPosition(0)}
+                      className={`px-2 py-0.5 rounded border transition-all ${
+                        sliderPosition === 0 ? 'bg-[#A0524E] text-white border-[#A0524E]' : 'glass-panel text-[#988686] hover:text-white'
+                      }`}
+                      title="Reveal 100% Return photo with all detected defects"
+                    >
+                      100% Return (All Defects)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSliderPosition(50)}
+                      className={`px-2 py-0.5 rounded border transition-all ${
+                        sliderPosition === 50 ? 'bg-black dark:bg-[#988686] text-white' : 'glass-panel text-[#988686] hover:text-white'
+                      }`}
+                    >
+                      50/50 Split
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSliderPosition(100)}
+                      className={`px-2 py-0.5 rounded border transition-all ${
+                        sliderPosition === 100 ? 'bg-[#5E7A63] text-white border-[#5E7A63]' : 'glass-panel text-[#988686] hover:text-white'
+                      }`}
+                    >
+                      100% Baseline
+                    </button>
+                  </div>
                 </div>
 
                 <div
@@ -790,13 +987,13 @@ export const PickupReturn: React.FC = () => {
                     className="absolute inset-0 w-full h-full object-cover"
                   />
 
-                  {/* OpenCV Bounding Boxes on Return side */}
-                  {currentAngle.isDamaged && (
-                    <div className="absolute inset-0 pointer-events-none">
+                  {/* OpenCV Bounding Boxes on Return side - Z-20 so it never hides under the baseline slider */}
+                  {showDefectsOverlay && currentAngle.isDamaged && (
+                    <div className="absolute inset-0 pointer-events-none z-20">
                       {currentAngle.defects.map((defect) => (
                         <div
                           key={defect.id}
-                          className="absolute border-2 border-[#A0524E] bg-[#A0524E]/20 rounded shadow-[0_0_12px_rgba(160,82,78,0.8)]"
+                          className="absolute border-2 border-[#A0524E] bg-[#A0524E]/25 rounded shadow-[0_0_15px_rgba(160,82,78,0.9)] animate-pulse"
                           style={{
                             left: `${defect.x}%`,
                             top: `${defect.y}%`,
@@ -804,7 +1001,8 @@ export const PickupReturn: React.FC = () => {
                             height: `${defect.height}%`,
                           }}
                         >
-                          <span className="absolute -top-5 left-0 text-[8px] font-mono font-bold bg-[#A0524E] text-white px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                          <span className="absolute -top-6 left-0 text-[8px] sm:text-[9px] font-mono font-bold bg-[#A0524E] text-white px-2 py-0.5 rounded shadow whitespace-nowrap flex items-center gap-1">
+                            <AlertCircle className="w-2.5 h-2.5" />
                             {defect.label} ({defect.confidence}%)
                           </span>
                         </div>
@@ -830,13 +1028,13 @@ export const PickupReturn: React.FC = () => {
 
                   {/* Slider Divider Handle */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center shadow-2xl pointer-events-none border-2 border-black/20"
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center shadow-2xl pointer-events-none border-2 border-black/20 z-30"
                     style={{ left: `${sliderPosition}%` }}
                   >
                     <Sliders className="w-4 h-4 text-black" />
                   </div>
 
-                  <div className="absolute top-3 right-3 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded">
+                  <div className="absolute top-3 right-3 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded z-10">
                     RETURN (CUSTOMER)
                   </div>
                 </div>
@@ -871,7 +1069,9 @@ export const PickupReturn: React.FC = () => {
                     <span className="font-bold text-[#A0524E] flex items-center gap-1">
                       <Crosshair className="w-3.5 h-3.5" /> Returned Asset Photo
                     </span>
-                    <span className="text-[10px] font-mono text-[#A0524E]">OPENCV DETECTED</span>
+                    <span className="text-[10px] font-mono text-[#A0524E] font-bold">
+                      {currentAngle.isDamaged ? `⚠️ ${currentAngle.defects.length} DEFECTS ACTIVE` : 'CLEAN'}
+                    </span>
                   </div>
                   <div className="relative aspect-video rounded-2xl overflow-hidden glass-panel border border-[#988686]/30 bg-black/40">
                     <img
@@ -879,12 +1079,12 @@ export const PickupReturn: React.FC = () => {
                       alt="Return"
                       className="w-full h-full object-cover"
                     />
-                    {currentAngle.isDamaged && (
-                      <div className="absolute inset-0 pointer-events-none">
+                    {showDefectsOverlay && currentAngle.isDamaged && (
+                      <div className="absolute inset-0 pointer-events-none z-10">
                         {currentAngle.defects.map((defect) => (
                           <div
                             key={defect.id}
-                            className="absolute border-2 border-[#A0524E] bg-[#A0524E]/25 rounded shadow"
+                            className="absolute border-2 border-[#A0524E] bg-[#A0524E]/25 rounded shadow-[0_0_12px_rgba(160,82,78,0.9)] animate-pulse"
                             style={{
                               left: `${defect.x}%`,
                               top: `${defect.y}%`,
@@ -892,8 +1092,9 @@ export const PickupReturn: React.FC = () => {
                               height: `${defect.height}%`,
                             }}
                           >
-                            <span className="absolute -top-5 left-0 text-[8px] font-mono font-bold bg-[#A0524E] text-white px-1.5 py-0.5 rounded shadow whitespace-nowrap">
-                              {defect.label}
+                            <span className="absolute -top-6 left-0 text-[8px] sm:text-[9px] font-mono font-bold bg-[#A0524E] text-white px-2 py-0.5 rounded shadow whitespace-nowrap flex items-center gap-1">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {defect.label} ({defect.confidence}%)
                             </span>
                           </div>
                         ))}
@@ -924,11 +1125,11 @@ export const PickupReturn: React.FC = () => {
                   {/* False Color Heatmap Filter Simulation */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/60 via-purple-900/40 to-transparent mix-blend-color-dodge pointer-events-none" />
 
-                  {currentAngle.isDamaged ? (
+                  {showDefectsOverlay && currentAngle.isDamaged ? (
                     currentAngle.defects.map((defect) => (
                       <div
                         key={defect.id}
-                        className="absolute rounded-full filter blur-md animate-pulse pointer-events-none"
+                        className="absolute rounded-full filter blur-md animate-pulse pointer-events-none z-10"
                         style={{
                           left: `${defect.x - 5}%`,
                           top: `${defect.y - 5}%`,
@@ -956,20 +1157,30 @@ export const PickupReturn: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#988686]/20">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#988686] font-mono">
-                  Current: {currentAngle.label} ({currentAngle.isDamaged ? 'Defect' : 'Pristine'})
+                  Current View: <strong className="text-[#000000] dark:text-white">{currentAngle.label}</strong> ({currentAngle.isDamaged ? '⚠️ Damage Active' : '✓ Clean'})
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="md"
+                  disabled={isScanning}
+                  leftIcon={isScanning && activeScanAngle === selectedAngle ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ScanEye className="w-4 h-4" />}
+                  onClick={handleScanCurrentAngle}
+                  className="flex-1 sm:flex-initial"
+                >
+                  {isScanning && activeScanAngle === selectedAngle ? `Analyzing Angle 0${selectedAngle}...` : `Scan Angle 0${selectedAngle} Only`}
+                </Button>
                 <Button
                   variant="primary"
                   size="md"
                   disabled={isScanning}
-                  leftIcon={isScanning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ScanEye className="w-4 h-4" />}
+                  leftIcon={isScanning && activeScanAngle !== selectedAngle ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   onClick={handleRunMultiAngleScan}
-                  className="w-full sm:w-auto"
+                  className="flex-1 sm:flex-initial"
                 >
-                  {isScanning ? `Scanning Angle 0${activeScanAngle}... (${scanProgress}%)` : 'Run 360° Multi-Angle OpenCV Scan'}
+                  {isScanning && activeScanAngle !== selectedAngle ? `Scanning (${scanProgress}%)...` : 'Run 360° Multi-Angle OpenCV Scan'}
                 </Button>
               </div>
             </div>
@@ -1058,7 +1269,22 @@ export const PickupReturn: React.FC = () => {
                   <span className="text-xs text-[#988686]">
                     Apply findings automatically to security deposit refund calculation below.
                   </span>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    {compositeScanResult.isDamaged && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Crosshair className="w-3.5 h-3.5 text-[#A0524E]" />}
+                        onClick={() => {
+                          setSelectedAngle(2);
+                          setSliderPosition(15);
+                          setShowDefectsOverlay(true);
+                        }}
+                        className="border-[#A0524E]/50 text-[#A0524E] hover:bg-[#A0524E]/10 font-bold"
+                      >
+                        Focus Angle 02 (Defects)
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
