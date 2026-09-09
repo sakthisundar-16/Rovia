@@ -138,3 +138,60 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(152, 134, 134, 0.7);
 }
+
+/* Flipkart-Style Shimmer Skeleton Animation (Using Existing Colors) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(152, 134, 134, 0.08) 25%,
+    rgba(152, 134, 134, 0.22) 50%,
+    rgba(152, 134, 134, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+  border-radius: 0.5rem;
+}
+
+/* Page Transition Top Loading Progress Bar */
+@keyframes progressPulse {
+  0% {
+    width: 0%;
+    opacity: 1;
+  }
+  50% {
+    width: 75%;
+    opacity: 0.9;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+.page-progress-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #988686, #5C4E4E, #000000);
+  z-index: 9999;
+  animation: progressPulse 0.45s ease-out forwards;
+}
+
+/* Flipkart-style tactile button press */
+.fk-btn-press {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.fk-btn-press:active {
+  transform: scale(0.97);
+}

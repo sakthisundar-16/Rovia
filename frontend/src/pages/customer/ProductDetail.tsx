@@ -34,6 +34,8 @@ import { EXTENDED_PRODUCTS } from '../../services/productsData';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
+import { PageLoaderBar, ProductDetailSkeleton } from '../../components/common/ShimmerSkeleton';
+import { RoviaAssuredBadge } from '../../components/common/RoviaAssuredBadge';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
 
@@ -94,9 +96,9 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
 
   if (loading || !product) {
     return (
-      <div className="w-full py-24 flex flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#988686] border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-mono uppercase text-[#988686] tracking-wider">Loading Product Details...</span>
+      <div className="w-full space-y-8 page-transition pb-24">
+        <PageLoaderBar active={true} />
+        <ProductDetailSkeleton />
       </div>
     );
   }
@@ -183,6 +185,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
 
   return (
     <div className="w-full space-y-8 page-transition pb-24">
+      <PageLoaderBar active={true} />
       {/* Breadcrumb Navigation (Flipkart/Amazon Standard) */}
       <div className="flex items-center justify-between border-b border-[#988686]/20 pb-3 text-xs">
         <div className="flex items-center gap-2 text-[#988686] flex-wrap">
@@ -585,8 +588,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 {product.name}
               </h1>
 
-              {/* Rating Star Badge (Flipkart/Amazon style) */}
-              <div className="flex items-center gap-2 mt-2">
+              {/* Rating Star Badge & ROVIA Assured (Flipkart style) */}
+              <div className="flex items-center gap-2.5 mt-2 flex-wrap">
                 <div className="inline-flex items-center gap-1 bg-[#5E7A63] text-white px-2 py-0.5 rounded-lg text-xs font-bold">
                   <span>{product.rating}</span>
                   <Star className="w-3 h-3 fill-current" />
@@ -594,6 +597,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 <span className="text-xs text-[#988686]">
                   {Math.floor(product.rating * 18)} Ratings & {Math.floor(product.rating * 4)} Reviews
                 </span>
+                <RoviaAssuredBadge size="sm" />
               </div>
             </div>
 
@@ -753,7 +757,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
               </div>
             </div>
 
-            {/* Action CTAs (Flipkart / Amazon Yellow & Orange Style) */}
+            {/* Action CTAs (Flipkart Dual Button UX with ROVIA Colors) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <Button
                 variant="outline"
@@ -761,7 +765,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 disabled={product.available === 0}
                 leftIcon={<ShoppingBag className="w-4 h-4" />}
                 onClick={handleAddToCart}
-                className="w-full py-3"
+                className="w-full py-3 fk-btn-press"
               >
                 Add to Bag
               </Button>
@@ -771,7 +775,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
                 disabled={product.available === 0}
                 leftIcon={<Zap className="w-4 h-4" />}
                 onClick={handleRentNow}
-                className="w-full py-3 shadow-warm-lg font-bold"
+                className="w-full py-3 shadow-warm-lg font-bold fk-btn-press"
               >
                 Rent Now
               </Button>
@@ -781,7 +785,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
       </div>
 
       {/* Mobile Sticky Quick Action Bar (Flipkart / Amazon Mobile Standard) */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl border-t border-[#988686]/30 shadow-2xl flex items-center justify-between gap-3">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-50 p-3 bg-white/95 dark:bg-[#161313]/95 backdrop-blur-xl border-t border-[#988686]/30 shadow-2xl flex items-center justify-between gap-3 safe-bottom">
         <div className="flex flex-col min-w-0">
           <span className="text-[9px] text-[#988686] uppercase font-mono leading-none">Total Payable</span>
           <span className="text-base font-bold font-mono text-[#000000] dark:text-white truncate mt-0.5">
@@ -796,7 +800,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
             disabled={product.available === 0}
             leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
             onClick={handleAddToCart}
-            className="px-3 py-2 text-xs"
+            className="px-3 py-2 text-xs fk-btn-press"
           >
             Add to Bag
           </Button>
@@ -806,7 +810,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onNavig
             disabled={product.available === 0}
             leftIcon={<Zap className="w-3.5 h-3.5" />}
             onClick={handleRentNow}
-            className="px-4 py-2 text-xs font-bold shadow-warm-md"
+            className="px-4 py-2 text-xs font-bold shadow-warm-md fk-btn-press"
           >
             Rent Now
           </Button>

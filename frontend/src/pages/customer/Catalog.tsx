@@ -18,7 +18,16 @@ import {
   Sparkles,
   Zap,
   Tag,
-  Truck
+  Truck,
+  Camera,
+  Laptop,
+  Plane,
+  Car,
+  Headphones,
+  HardHat,
+  Wrench,
+  Compass,
+  Flame
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -28,6 +37,8 @@ import { Product, RenterVendor } from '../../services/mockData';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
+import { PageLoaderBar, ProductCardSkeleton, CategoryStripSkeleton } from '../../components/common/ShimmerSkeleton';
+import { RoviaAssuredBadge } from '../../components/common/RoviaAssuredBadge';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=800';
 
@@ -42,6 +53,31 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [renters, setRenters] = useState<RenterVendor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transitioning, setTransitioning] = useState(false);
+
+  const FLIPKART_CATEGORIES = [
+    { id: 'All', label: 'All Items', icon: <LayoutGrid className="w-5 h-5" /> },
+    { id: 'Cameras & Lenses', label: 'Cameras', icon: <Camera className="w-5 h-5" /> },
+    { id: 'Electronics & Tech', label: 'Electronics', icon: <Laptop className="w-5 h-5" /> },
+    { id: 'Drones & Aerial', label: 'Drones', icon: <Plane className="w-5 h-5" /> },
+    { id: 'Vehicles & Mobility', label: 'Vehicles', icon: <Car className="w-5 h-5" /> },
+    { id: 'Audio & Sound', label: 'Audio Gear', icon: <Headphones className="w-5 h-5" /> },
+    { id: 'Heavy Machinery', label: 'Machinery', icon: <HardHat className="w-5 h-5" /> },
+    { id: 'Tools & Equipment', label: 'Tools', icon: <Wrench className="w-5 h-5" /> },
+    { id: 'Designer Fashion', label: 'Fashion', icon: <Sparkles className="w-5 h-5" /> },
+    { id: 'Outdoor & Camping', label: 'Outdoors', icon: <Compass className="w-5 h-5" /> },
+    { id: 'Home Appliances', label: 'Appliances', icon: <Flame className="w-5 h-5" /> },
+  ];
+
+  const handleSelectCategory = (catId: string) => {
+    if (selectedCategory === catId) return;
+    setTransitioning(true);
+    setSelectedCategory(catId);
+    setCurrentPage(1);
+    setTimeout(() => {
+      setTransitioning(false);
+    }, 350);
+  };
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -358,6 +394,8 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
 
   return (
     <div className="w-full space-y-6 page-transition pb-20">
+      <PageLoaderBar active={loading || transitioning} />
+
       {/* ========================================================================= */}
       {/* 1. TOP MARKETPLACE HEADER & SEARCH                                        */}
       {/* ========================================================================= */}
@@ -390,11 +428,71 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
               setShowFilters(!showFilters);
               setMobileFiltersOpen(true);
             }}
-            className="shrink-0"
+            className="shrink-0 fk-btn-press"
           >
             <span className="hidden sm:inline">{showFilters ? 'Hide Filters' : 'Filters'}</span>
             <span className="sm:hidden">Filters</span>
           </Button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* FLIPKART HORIZONTAL CIRCULAR CATEGORY STRIP                               */}
+      {/* ========================================================================= */}
+      <div className="glass-panel p-3 sm:p-4 rounded-2xl border border-[#988686]/25 shadow-warm-xs">
+        {loading ? (
+          <CategoryStripSkeleton />
+        ) : (
+          <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-1 no-scrollbar">
+            {FLIPKART_CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleSelectCategory(cat.id)}
+                  className={`flex flex-col items-center gap-1.5 shrink-0 px-2 py-1 rounded-xl transition-all fk-btn-press ${
+                    isSelected
+                      ? 'text-[#000000] dark:text-white font-bold scale-105'
+                      : 'text-[#5C4E4E] dark:text-[#B5A9A9] opacity-75 hover:opacity-100 hover:text-black dark:hover:text-white'
+                  }`}
+                >
+                  <div
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'bg-[#000000] text-white dark:bg-white dark:text-black shadow-warm-md ring-2 ring-[#988686]'
+                        : 'bg-[#988686]/15 text-[#5C4E4E] dark:text-[#D1D0D0] hover:bg-[#988686]/30'
+                    }`}
+                  >
+                    {cat.icon}
+                  </div>
+                  <span className="text-[11px] font-medium tracking-tight whitespace-nowrap">
+                    {cat.label}
+                  </span>
+                  {isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#000000] dark:bg-white -mt-0.5" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Flipkart-Style Deals & Trust Ticker */}
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#988686]/10 border border-[#988686]/20 text-xs flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[#000000] dark:text-white flex items-center gap-1.5">
+            <Zap className="w-4 h-4 text-[#B08A4E]" />
+            Deals of the Day:
+          </span>
+          <span className="text-[#5C4E4E] dark:text-[#B5A9A9] hidden sm:inline">
+            Up to 40% off security deposits on verified cinema & mobility gear.
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#5E7A63] font-bold">
+          <span>⏳ Ends in 11h : 42m : 18s</span>
+          <RoviaAssuredBadge size="sm" />
         </div>
       </div>
 
@@ -588,9 +686,17 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
           )}
 
           {/* ========================================================================= */}
-          {/* OPTION A: GRID VIEW (Flipkart Modern Product Grid)                         */}
+          {/* 5. PRODUCTS RESULTS: Shimmer Skeletons, Grid View OR Flipkart List View   */}
           {/* ========================================================================= */}
-          {viewMode === 'grid' && (
+          {(loading || transitioning) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !transitioning && viewMode === 'grid' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedProducts.map((product) => {
                 const regularRate = Math.round(product.dailyRate * 1.22);
@@ -599,7 +705,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                 return (
                   <Card
                     key={product.id}
-                    className="overflow-hidden group hover:border-[#988686] transition-all duration-300 flex flex-col cursor-pointer border-[#988686]/25 shadow-warm-sm hover:shadow-warm-lg"
+                    className="overflow-hidden group hover:border-[#988686] transition-all duration-300 flex flex-col cursor-pointer border-[#988686]/25 shadow-warm-sm hover:shadow-warm-lg fk-btn-press"
                     onClick={() => onNavigate('product-detail', product.id)}
                   >
                     {/* Card Media Header */}
@@ -613,10 +719,9 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
 
-                      {/* ROVIA Assured Pill */}
-                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#5E7A63]/50 text-[10px] font-bold text-white shadow">
-                        <ShieldCheck className="w-3 h-3 text-[#5E7A63]" />
-                        <span>ASSURED</span>
+                      {/* ROVIA Assured Badge */}
+                      <div className="absolute top-2.5 left-2.5">
+                        <RoviaAssuredBadge size="sm" />
                       </div>
 
                       {/* Stock Status Badge */}
@@ -697,7 +802,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
           {/* ========================================================================= */}
           {/* OPTION B: LIST VIEW (Flipkart Horizontal Search Results Style)            */}
           {/* ========================================================================= */}
-          {viewMode === 'list' && (
+          {!loading && !transitioning && viewMode === 'list' && (
             <div className="space-y-4">
               {paginatedProducts.map((product) => {
                 const regularRate = Math.round(product.dailyRate * 1.22);
@@ -706,7 +811,7 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                 return (
                   <Card
                     key={product.id}
-                    className="p-5 overflow-hidden group hover:border-[#988686] transition-all flex flex-col md:flex-row gap-6 cursor-pointer border-[#988686]/25 shadow-warm-sm hover:shadow-warm-lg"
+                    className="p-5 overflow-hidden group hover:border-[#988686] transition-all flex flex-col md:flex-row gap-6 cursor-pointer border-[#988686]/25 shadow-warm-sm hover:shadow-warm-lg fk-btn-press"
                     onClick={() => onNavigate('product-detail', product.id)}
                   >
                     {/* Media Left */}
@@ -716,9 +821,8 @@ export const Catalog: React.FC<CatalogProps> = ({ onNavigate }) => {
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 px-2 py-0.5 rounded-full text-[9px] font-bold text-white">
-                        <ShieldCheck className="w-3 h-3 text-[#5E7A63]" />
-                        <span>ASSURED</span>
+                      <div className="absolute top-2.5 left-2.5">
+                        <RoviaAssuredBadge size="sm" />
                       </div>
                     </div>
 

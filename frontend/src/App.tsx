@@ -5,6 +5,8 @@ import { ToastProvider } from './components/ui/Toast';
 
 // Navbars
 import { CustomerNavbar } from './components/layout/CustomerNavbar';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
+import { PageLoaderBar } from './components/common/ShimmerSkeleton';
 import { RenterNavbar } from './components/layout/RenterNavbar';
 import { AdminNavbar } from './components/layout/AdminNavbar';
 import { AdminTopbar } from './components/layout/AdminTopbar';
@@ -195,8 +197,9 @@ const MainAppContent: React.FC = () => {
   // ── CUSTOMER PORTAL (green-accent navbar) ────────────────
   return (
     <div className="min-h-screen flex flex-col justify-between transition-colors duration-300">
+      <PageLoaderBar active={true} />
       <CustomerNavbar currentTab={customerTab} onNavigate={handleCustomerNavigate} />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20 md:pb-6">
         {customerTab === 'auth' && (
           <Auth
             onSuccess={(role) => {
@@ -224,6 +227,13 @@ const MainAppContent: React.FC = () => {
         {customerTab === 'return-flow' && <ReturnFlow onNavigate={handleCustomerNavigate} />}
       </main>
       <CustomerFooter />
+      {customerTab !== 'product-detail' && (
+        <MobileBottomNav
+          currentTab={customerTab}
+          onNavigate={handleCustomerNavigate}
+          onOpenCategories={() => handleCustomerNavigate('catalog')}
+        />
+      )}
     </div>
   );
 };
