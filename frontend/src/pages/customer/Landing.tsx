@@ -12,29 +12,30 @@ interface LandingProps {
 export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
   return (
     <div className="w-full space-y-24 pb-16 page-transition">
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center rounded-3xl overflow-hidden bg-[#0D0B0B] border border-[#988686]/30 p-8 sm:p-16 my-4 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D0B0B]/95 via-[#161313]/90 to-[#5C4E4E]/80 z-0 pointer-events-none" />
+      {/* Hero Section — Previous Glassmorphic Atelier (Black Removed) */}
+      <section className="relative min-h-[85vh] flex items-center justify-center rounded-3xl overflow-hidden glass-panel border border-[#988686]/30 p-8 sm:p-16 my-4 shadow-2xl">
+        {/* Luminous Glassmorphic Sheen & Texture */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/40 to-[#988686]/15 dark:from-[#161313]/80 dark:via-[#161313]/60 dark:to-[#5C4E4E]/30 pointer-events-none z-0" />
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay z-0 pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center opacity-15 dark:opacity-25 mix-blend-overlay pointer-events-none z-0"
           style={{
             backgroundImage: `url('/landing-hero.jpg')`,
           }}
         />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-          <Badge variant="neutral" icon={true} className="px-4 py-1 text-xs bg-white/10 text-white border border-white/20">
+          <Badge variant="neutral" icon={true} className="px-4 py-1.5 text-xs font-semibold glass-panel border border-[#988686]/30 text-[#000000] dark:text-white shadow-xs">
             Universal Product & Property Rental Atelier
           </Badge>
 
-          <h1 className="font-heading text-5xl sm:text-7xl font-bold tracking-tight text-white leading-tight drop-shadow-xl">
+          <h1 className="font-heading text-5xl sm:text-7xl font-bold tracking-tight text-[#000000] dark:text-white leading-tight">
             Rent Anything, Anywhere <br />
-            <span className="text-[#EDEBEB] italic font-normal text-3xl sm:text-5xl block mt-2 drop-shadow-md">
+            <span className="text-[#5C4E4E] dark:text-[#D1D0D0] italic font-normal text-3xl sm:text-5xl block mt-2">
               From Tech & Vehicles to Verified Homes & Studios
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed font-normal drop-shadow-sm">
+          <p className="text-base sm:text-lg text-[#332A2A] dark:text-[#EDEBEB] max-w-2xl mx-auto leading-relaxed font-normal">
             Reserve apartments near Nadar Saraswathi College, Hasselblad camera rigs, luxury villas, and mobility fleets. Explore interactive radius search with nearby facility intelligence.
           </p>
 
@@ -51,31 +52,31 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
             </Button>
             <button
               onClick={() => onNavigate('property-map')}
-              className="px-6 py-3.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 text-base font-bold flex items-center gap-2 transition shadow-lg active:scale-95 fk-btn-press"
+              className="px-6 py-3.5 rounded-xl glass-card hover:bg-white/90 dark:hover:bg-black/60 text-[#000000] dark:text-white border border-[#988686]/40 text-base font-bold flex items-center gap-2 transition shadow-md active:scale-95 fk-btn-press"
             >
-              <MapPin className="w-5 h-5 text-rose-400" />
+              <MapPin className="w-5 h-5 text-rose-500" />
               <span>Find Properties on Map</span>
             </button>
             <Button
               size="lg"
               variant="outline"
               onClick={() => onNavigate('auth')}
-              className="px-6 py-4 text-base font-bold fk-btn-press text-white border-white/40 hover:bg-white/10"
+              className="px-6 py-4 text-base font-bold fk-btn-press"
             >
               Partner Portals
             </Button>
           </div>
-          <span className="text-[#D1D0D0] text-xs font-mono tracking-widest text-center block font-medium">
+          <span className="text-[#5C4E4E] dark:text-[#B5A9A9] text-xs font-mono tracking-widest text-center block font-semibold">
             Customer · Renter · Admin Portals
           </span>
 
-          <div className="pt-8 border-t border-white/20 flex items-center justify-center gap-8 text-xs font-mono text-[#D1D0D0] uppercase tracking-widest font-semibold">
+          <div className="pt-8 border-t border-[#988686]/30 flex items-center justify-center gap-8 text-xs font-mono text-[#5C4E4E] dark:text-[#D1D0D0] uppercase tracking-widest font-bold">
             <span>RENT</span>
-            <span className="text-emerald-400">•</span>
+            <span className="text-emerald-600 dark:text-emerald-400">•</span>
             <span>USE</span>
-            <span className="text-emerald-400">•</span>
+            <span className="text-emerald-600 dark:text-emerald-400">•</span>
             <span>RETURN</span>
-            <span className="text-emerald-400">•</span>
+            <span className="text-emerald-600 dark:text-emerald-400">•</span>
             <span>REUSE</span>
           </div>
         </div>
