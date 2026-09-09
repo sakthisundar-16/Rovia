@@ -579,7 +579,7 @@ export const INITIAL_INSPECTIONS: InspectionItem[] = [
     orderNumber: 'ROV-2026-881',
     customerName: 'Elena Vance',
     productName: 'Hasselblad X2D 100C',
-    productImage: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600',
+    productImage: '/inspection-camera-pristine.jpg',
     scheduledTime: '17:00 Today',
     type: 'Pickup',
     status: 'In Progress',

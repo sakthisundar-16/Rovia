@@ -73,6 +73,11 @@ interface OpenCVScanResult {
   angles: Record<number, AngleInspectionData>;
 }
 
+// Distinct Real Product Image vs Actual Damaged Product Images for OpenCV Inspection
+const PRISTINE_PRODUCT_IMG = '/inspection-camera-pristine.jpg';
+const DAMAGED_SCRATCHED_IMG = '/inspection-camera-scratched.jpg';
+const DAMAGED_CRACKED_IMG = '/inspection-camera-cracked.jpg';
+
 // Preset samples for rapid testing of OpenCV detection
 const PRESET_SAMPLES = {
   pristine: {
@@ -83,40 +88,46 @@ const PRESET_SAMPLES = {
     severity: 'PRISTINE' as const,
     matchScore: 99.2,
     damagePercentage: 0.1,
+    baselineImage: PRISTINE_PRODUCT_IMG,
+    returnImage: PRISTINE_PRODUCT_IMG,
     defects: [],
     suggestedDeduction: 0,
     verdict: 'PASSED: Asset verified in pristine condition. No structural or surface damage detected across all 4 angles.',
   },
   scratch: {
     label: 'Preset B: Surface Scratches & Scuffs',
-    desc: 'Optical discrepancy detected on Angle 2 chassis housing. 2 bounding contours flagged.',
+    desc: 'Optical discrepancy detected on Angle 2 chassis housing. 3 bounding contours flagged on real damage photo.',
     badge: 'warning' as const,
     damage: true,
     severity: 'MODERATE' as const,
     matchScore: 72.8,
     damagePercentage: 3.4,
+    baselineImage: PRISTINE_PRODUCT_IMG,
+    returnImage: DAMAGED_SCRATCHED_IMG,
     defects: [
-      { id: 1, label: 'SCRATCH #1 (Chassis Scuff)', x: 38, y: 32, width: 22, height: 16, severity: 'MEDIUM', areaPixels: 480, confidence: 94.8 },
-      { id: 2, label: 'DENT #2 (Corner Impact)', x: 62, y: 55, width: 18, height: 14, severity: 'MEDIUM', areaPixels: 310, confidence: 89.2 }
+      { id: 1, label: 'SCRATCH #1 (Prism Edge Scuff)', x: 58, y: 15, width: 14, height: 16, severity: 'MEDIUM', areaPixels: 480, confidence: 94.8 },
+      { id: 2, label: 'ABRASION #2 (Right Chassis Wear)', x: 60, y: 38, width: 14, height: 32, severity: 'MEDIUM', areaPixels: 620, confidence: 91.5 },
+      { id: 3, label: 'PAINT WEAR #3 (Faceplate Scuff)', x: 46, y: 32, width: 15, height: 8, severity: 'LOW', areaPixels: 240, confidence: 88.0 }
     ],
     suggestedDeduction: 4500,
-    verdict: 'WARNING: Moderate Surface Damage Detected! 2 scratch zones identified on right chassis housing.',
+    verdict: 'WARNING: Moderate Surface Damage Detected! Real product scuffs and abrasions identified on right chassis housing.',
   },
   crack: {
     label: 'Preset C: Severe Impact Fractures',
-    desc: 'Deep structural fractures and missing port cover. Immediate deposit deduction required.',
+    desc: 'Deep structural fractures and shattered optical glass. Immediate deposit deduction required.',
     badge: 'danger' as const,
     damage: true,
     severity: 'SEVERE' as const,
     matchScore: 48.6,
     damagePercentage: 8.9,
+    baselineImage: PRISTINE_PRODUCT_IMG,
+    returnImage: DAMAGED_CRACKED_IMG,
     defects: [
-      { id: 1, label: 'FRACTURE #1 (Impact Crack)', x: 25, y: 28, width: 35, height: 28, severity: 'HIGH', areaPixels: 1420, confidence: 98.2 },
-      { id: 2, label: 'FRACTURE #2 (Spidering Web)', x: 48, y: 44, width: 30, height: 22, severity: 'HIGH', areaPixels: 980, confidence: 96.5 },
-      { id: 3, label: 'DEFORMATION #3 (Missing Port Cover)', x: 74, y: 68, width: 16, height: 18, severity: 'HIGH', areaPixels: 640, confidence: 91.0 }
+      { id: 1, label: 'FRACTURE #1 (Shattered Lens Glass)', x: 33, y: 40, width: 28, height: 38, severity: 'HIGH', areaPixels: 1820, confidence: 98.4 },
+      { id: 2, label: 'IMPACT CRACK #2 (Chassis Body Split)', x: 48, y: 22, width: 16, height: 42, severity: 'HIGH', areaPixels: 1240, confidence: 96.8 },
     ],
     suggestedDeduction: 14500,
-    verdict: 'CRITICAL ALERT: Severe Structural Damage Detected! 3 major impact fractures and chassis deformation flagged.',
+    verdict: 'CRITICAL ALERT: Severe Structural Damage Detected! Optical lens shattered and body split from heavy impact.',
   }
 };
 
@@ -151,16 +162,16 @@ export const PickupReturn: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  const baseImage = selectedInspection?.productImage || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800';
+  const baseImage = selectedInspection?.productImage || PRISTINE_PRODUCT_IMG;
 
-  // 4 Angles Default Data
+  // 4 Angles Default Data — Initialized with real product image (Baseline) vs actual damaged product image (Return)
   const [angleData, setAngleData] = useState<Record<number, AngleInspectionData>>({
     1: {
       angleNumber: 1,
       label: 'Angle 1: Front Optics',
       subLabel: 'Lens Glass & Optical Elements',
-      baselineImage: baseImage,
-      returnImage: baseImage,
+      baselineImage: PRISTINE_PRODUCT_IMG,
+      returnImage: PRISTINE_PRODUCT_IMG,
       isScanned: true,
       isDamaged: false,
       matchScore: 99.4,
@@ -172,8 +183,8 @@ export const PickupReturn: React.FC = () => {
       angleNumber: 2,
       label: 'Angle 2: Right Chassis',
       subLabel: 'Controls, Dials & External Shell',
-      baselineImage: baseImage,
-      returnImage: baseImage,
+      baselineImage: PRISTINE_PRODUCT_IMG,
+      returnImage: DAMAGED_SCRATCHED_IMG,
       isScanned: true,
       isDamaged: true,
       matchScore: 72.8,
@@ -185,8 +196,8 @@ export const PickupReturn: React.FC = () => {
       angleNumber: 3,
       label: 'Angle 3: Left Bay & I/O',
       subLabel: 'Ports, SDI/HDMI & Card Slots',
-      baselineImage: baseImage,
-      returnImage: baseImage,
+      baselineImage: PRISTINE_PRODUCT_IMG,
+      returnImage: PRISTINE_PRODUCT_IMG,
       isScanned: true,
       isDamaged: false,
       matchScore: 98.8,
@@ -198,8 +209,8 @@ export const PickupReturn: React.FC = () => {
       angleNumber: 4,
       label: 'Angle 4: Base & Accessories',
       subLabel: 'Tripod Mount, Hardcase & Cables',
-      baselineImage: baseImage,
-      returnImage: baseImage,
+      baselineImage: PRISTINE_PRODUCT_IMG,
+      returnImage: PRISTINE_PRODUCT_IMG,
       isScanned: true,
       isDamaged: false,
       matchScore: 99.1,
@@ -289,15 +300,19 @@ export const PickupReturn: React.FC = () => {
     const newAngles: Record<number, AngleInspectionData> = {
       1: {
         ...angleData[1],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: presetKey === 'crack' ? DAMAGED_CRACKED_IMG : PRISTINE_PRODUCT_IMG,
         isScanned: true,
-        isDamaged: false,
-        matchScore: 99.4,
-        damagePercentage: 0.1,
-        defects: [],
-        severity: 'PRISTINE',
+        isDamaged: presetKey === 'crack',
+        matchScore: presetKey === 'crack' ? 48.6 : 99.4,
+        damagePercentage: presetKey === 'crack' ? 8.9 : 0.1,
+        defects: presetKey === 'crack' ? [p.defects[0] as DefectBox] : [],
+        severity: presetKey === 'crack' ? 'SEVERE' : 'PRISTINE',
       },
       2: {
         ...angleData[2],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: presetKey === 'scratch' ? DAMAGED_SCRATCHED_IMG : presetKey === 'crack' ? DAMAGED_CRACKED_IMG : PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: p.damage,
         matchScore: p.matchScore,
@@ -307,15 +322,19 @@ export const PickupReturn: React.FC = () => {
       },
       3: {
         ...angleData[3],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: presetKey === 'crack' ? DAMAGED_CRACKED_IMG : PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: presetKey === 'crack',
         matchScore: presetKey === 'crack' ? 62.4 : 98.8,
         damagePercentage: presetKey === 'crack' ? 5.2 : 0.2,
-        defects: presetKey === 'crack' ? [p.defects[2] as DefectBox] : [],
+        defects: presetKey === 'crack' ? [p.defects[1] as DefectBox] : [],
         severity: presetKey === 'crack' ? 'SEVERE' : 'PRISTINE',
       },
       4: {
         ...angleData[4],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: false,
         matchScore: 99.1,
@@ -368,8 +387,15 @@ export const PickupReturn: React.FC = () => {
     const isThisDamaged = preset.damage;
     const defectsThis = isThisDamaged ? (preset.defects as DefectBox[]) : [];
 
+    let returnImg = PRISTINE_PRODUCT_IMG;
+    if (isThisDamaged) {
+      returnImg = activePreset === 'crack' ? DAMAGED_CRACKED_IMG : DAMAGED_SCRATCHED_IMG;
+    }
+
     const updatedAngle: AngleInspectionData = {
       ...angleData[selectedAngle],
+      baselineImage: PRISTINE_PRODUCT_IMG,
+      returnImage: angleData[selectedAngle].returnImage.startsWith('data:') ? angleData[selectedAngle].returnImage : returnImg,
       isScanned: true,
       isDamaged: isThisDamaged,
       matchScore: isThisDamaged ? preset.matchScore : 99.4,
@@ -422,15 +448,19 @@ export const PickupReturn: React.FC = () => {
     const newAngles: Record<number, AngleInspectionData> = {
       1: {
         ...angleData[1],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: activePreset === 'crack' ? DAMAGED_CRACKED_IMG : PRISTINE_PRODUCT_IMG,
         isScanned: true,
-        isDamaged: false,
-        matchScore: 99.4,
-        damagePercentage: 0.1,
-        defects: [],
-        severity: 'PRISTINE',
+        isDamaged: activePreset === 'crack',
+        matchScore: activePreset === 'crack' ? 48.6 : 99.4,
+        damagePercentage: activePreset === 'crack' ? 8.9 : 0.1,
+        defects: activePreset === 'crack' ? [preset.defects[0] as DefectBox] : [],
+        severity: activePreset === 'crack' ? 'SEVERE' : 'PRISTINE',
       },
       2: {
         ...angleData[2],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: preset.damage ? (activePreset === 'crack' ? DAMAGED_CRACKED_IMG : DAMAGED_SCRATCHED_IMG) : PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: preset.damage,
         matchScore: preset.matchScore,
@@ -440,15 +470,19 @@ export const PickupReturn: React.FC = () => {
       },
       3: {
         ...angleData[3],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: activePreset === 'crack' ? DAMAGED_CRACKED_IMG : PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: activePreset === 'crack',
         matchScore: activePreset === 'crack' ? 62.4 : 98.8,
         damagePercentage: activePreset === 'crack' ? 5.2 : 0.2,
-        defects: activePreset === 'crack' ? [preset.defects[2] as DefectBox] : [],
+        defects: activePreset === 'crack' ? [preset.defects[1] as DefectBox] : [],
         severity: activePreset === 'crack' ? 'SEVERE' : 'PRISTINE',
       },
       4: {
         ...angleData[4],
+        baselineImage: PRISTINE_PRODUCT_IMG,
+        returnImage: PRISTINE_PRODUCT_IMG,
         isScanned: true,
         isDamaged: false,
         matchScore: 99.1,
