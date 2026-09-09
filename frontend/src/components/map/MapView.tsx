@@ -44,10 +44,10 @@ export const MapView: React.FC<MapViewProps> = ({
         attributionControl: false
       });
 
-      // CartoDB Voyager tiles (clean, high performance, light modern theme)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // Standard OpenStreetMap tiles (100% Free, Global Coverage, ZERO API KEY required)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd',
+        subdomains: ['a', 'b', 'c'],
       }).addTo(map);
 
       // Add Zoom control at bottom right for easy thumb access on mobile

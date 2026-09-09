@@ -7,7 +7,7 @@
 [![Live Demo](https://img.shields.io/badge/Demo-rovia.vercel.app-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://rovia.vercel.app)
 [![React 18](https://img.shields.io/badge/React-18.2%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![Vite 5](https://img.shields.io/badge/Vite-5.1-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-[![Leaflet Maps](https://img.shields.io/badge/Maps-Leaflet%20%2B%20CartoDB-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com)
+[![Leaflet Maps](https://img.shields.io/badge/Maps-Leaflet%20%2B%20OpenStreetMap-199900?style=for-the-badge&logo=openstreetmap&logoColor=white)](https://openstreetmap.org)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS%203-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=black)](https://tailwindcss.com)
@@ -26,7 +26,7 @@
 
 | Feature Category | Core Capabilities | Technology |
 | :--- | :--- | :--- |
-| 🗺️ **Geospatial Discovery** | Radius filtering (1–20 km), College/PIN geocoding, Nearby facility radar, Explainable match score | **Leaflet**, **CartoDB Voyager**, **Haversine Engine** |
+| 🗺️ **Geospatial Discovery** | Radius filtering (1–20 km), College/PIN geocoding, Nearby facility radar, Explainable match score | **Leaflet**, **OpenStreetMap**, **Haversine Engine** |
 | 👁️ **Computer Vision Return** | 360° multi-angle defect segmentation, Split-curtain comparator, Escrow auto-deductions | **OpenCV Detection**, **Canvas API** |
 | 🛍️ **Universal Marketplace** | 300+ products across 30+ categories, 4-angle product creation wizard, Flipkart/Amazon UX | **React 18**, **TypeScript**, **Tailwind 3** |
 | 🛡️ **Role Governance** | Tri-portal routing (Customer / Landlord-Renter / Administrator), QR handover verifications | **Context API**, **JWT Authentication** |
@@ -36,7 +36,7 @@
 
 ## 🗺️ Map-Based Property Discovery & Intelligence
 
-ROVIA features a fully interactive, zero-API-cost mapping system powered by **Leaflet** and **CartoDB Voyager** tiles. It enables tenants to discover verified properties, inspect neighborhood infrastructure, and evaluate personalized match scores in real time.
+ROVIA features a fully interactive, 100% open-source mapping system powered by **Leaflet** and official **OpenStreetMap** standard tiles (strictly **Zero API Key Required**). It enables tenants to discover verified properties, inspect neighborhood infrastructure, and evaluate personalized match scores in real time.
 
 ```mermaid
 graph LR
