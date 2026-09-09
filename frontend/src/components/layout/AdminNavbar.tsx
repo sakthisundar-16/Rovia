@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -53,6 +54,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
     { id: 'late-fees', label: 'Late Fee Engine', icon: <Clock className="w-4 h-4" /> },
     { id: 'quotations', label: 'Quotation Templates', icon: <FileText className="w-4 h-4" /> },
     { id: 'reports', label: 'Platform Analytics', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'geo-analytics', label: 'Geo Analytics & Maps', icon: <MapPin className="w-4 h-4" /> },
     { id: 'settings', label: 'Platform Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'profile', label: 'My Account Profile', icon: <UserRound className="w-4 h-4" /> },
   ];

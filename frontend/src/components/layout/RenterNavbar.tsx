@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BarcodeScannerModal } from '../common/BarcodeScannerModal';
@@ -51,6 +52,7 @@ export const RenterNavbar: React.FC<RenterNavbarProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: 'Renter Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'portfolio-map', label: 'Portfolio Map', icon: <MapPin className="w-4 h-4" /> },
     { id: 'products', label: 'My Products & Rates', icon: <Package className="w-4 h-4" /> },
     { id: 'orders', label: 'My Rental Orders', icon: <ShoppingBag className="w-4 h-4" /> },
     { id: 'pickup-return', label: 'Pickup & Return', icon: <RotateCcw className="w-4 h-4" /> },

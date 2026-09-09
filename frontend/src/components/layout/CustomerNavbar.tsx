@@ -12,6 +12,7 @@ import {
   Award,
   Bell,
   Check,
+  MapPin,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -59,6 +60,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ currentTab, onNa
 
   const navLinks = [
     { id: 'catalog', label: 'Browse Catalog', icon: <Search className="w-3.5 h-3.5" /> },
+    { id: 'property-map', label: 'Property Map', icon: <MapPin className="w-3.5 h-3.5" /> },
     { id: 'my-rentals', label: 'My Rentals', icon: <ClipboardList className="w-3.5 h-3.5" /> },
     { id: 'trust-score', label: 'Trust Score', icon: <Award className="w-3.5 h-3.5" /> },
     { id: 'return-flow', label: 'Return Guide', icon: <RotateCcw className="w-3.5 h-3.5" /> },

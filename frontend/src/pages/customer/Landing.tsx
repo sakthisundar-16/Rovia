@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Camera, Car, Wrench, Shirt } from 'lucide-react';
+import { ArrowRight, Camera, Car, Wrench, Shirt, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -24,36 +24,43 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
 
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           <Badge variant="neutral" icon={true} className="px-4 py-1 text-xs">
-            Universal Product Rental Atelier
+            Universal Product & Property Rental Atelier
           </Badge>
 
           <h1 className="font-heading text-5xl sm:text-7xl font-bold tracking-tight text-white leading-tight">
-            Rent Anything, Anytime <br />
-            <span className="text-[#988686] italic font-normal">From Tech to Heavy Machinery & Luxury Goods</span>
+            Rent Anything, Anywhere <br />
+            <span className="text-[#988686] italic font-normal">From Tech & Vehicles to Verified Homes & Studios</span>
           </h1>
 
           <p className="text-base sm:text-lg text-[#D1D0D0] max-w-2xl mx-auto leading-relaxed font-light">
-            Reserve Hasselblad cameras, Caterpillar excavators, Vera Wang haute couture, Tesla Cybertrucks, and medical suites. Flexible rental windows with 100% refundable deposit protection.
+            Reserve apartments near Nadar Saraswathi College, Hasselblad camera rigs, luxury villas, and mobility fleets. Explore interactive radius search with nearby facility intelligence.
           </p>
 
-          {/* CTAs — Explore Catalog & Sign In */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          {/* CTAs — Explore Catalog, Map Discovery & Sign In */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
             <Button
               size="lg"
               variant="primary"
               rightIcon={<ArrowRight className="w-5 h-5" />}
               onClick={() => onNavigate('catalog')}
-              className="px-8 py-4 text-base font-bold shadow-lg"
+              className="px-6 py-4 text-base font-bold shadow-lg"
             >
-              Explore Rental Catalog
+              Explore Products
             </Button>
+            <button
+              onClick={() => onNavigate('property-map')}
+              className="px-6 py-3.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 text-base font-bold flex items-center gap-2 transition shadow-lg active:scale-95"
+            >
+              <MapPin className="w-5 h-5 text-rose-400" />
+              <span>Find Properties on Map</span>
+            </button>
             <Button
               size="lg"
               variant="outline"
               onClick={() => onNavigate('auth')}
-              className="px-8 py-4 text-base font-bold"
+              className="px-6 py-4 text-base font-bold"
             >
-              Sign In / Partner Portals
+              Partner Portals
             </Button>
           </div>
           <span className="text-[#988686] text-xs font-mono tracking-widest text-center block">

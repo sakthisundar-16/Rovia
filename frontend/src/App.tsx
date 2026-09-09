@@ -38,6 +38,11 @@ import { Customers } from './pages/admin/Customers';
 import { Reports } from './pages/admin/Reports';
 import { Settings } from './pages/admin/Settings';
 
+// Property Intelligence & Map Pages
+import { PropertyDiscoveryMap } from './pages/customer/PropertyDiscoveryMap';
+import { LandlordPortfolioMap } from './pages/renter/LandlordPortfolioMap';
+import { AdminGeoAnalytics } from './pages/admin/AdminGeoAnalytics';
+
 const MainAppContent: React.FC = () => {
   const { mode, switchMode } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
@@ -91,6 +96,9 @@ const MainAppContent: React.FC = () => {
       case 'customers': return 'Customer Directory & Trust Scores';
       case 'disputes': return 'Damage Claims & Resolution';
       case 'reports': return 'Financial & Inventory Analytics';
+      case 'geo-analytics': return 'Geographic Oversight & Locality Analytics';
+      case 'portfolio-map': return 'Portfolio Discovery & Status Map';
+      case 'property-map': return 'Property Discovery & Intelligence Map';
       case 'settings': return 'Operations Settings';
       case 'profile': return 'My Account Profile';
       default: return 'Operations Console';
@@ -127,6 +135,7 @@ const MainAppContent: React.FC = () => {
             {adminTab === 'products' && <Products />}
             {adminTab === 'customers' && <Customers />}
             {adminTab === 'reports' && <Reports />}
+            {adminTab === 'geo-analytics' && <AdminGeoAnalytics />}
             {adminTab === 'settings' && <Settings />}
             {adminTab === 'profile' && <Profile />}
           </main>
@@ -155,6 +164,7 @@ const MainAppContent: React.FC = () => {
           />
           <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {adminTab === 'dashboard' && <Dashboard onNavigate={handleAdminNavigate} />}
+            {adminTab === 'portfolio-map' && <LandlordPortfolioMap />}
             {adminTab === 'products' && <Products />}
             {adminTab === 'orders' && <Orders selectedOrderId={selectedOrderId} />}
             {adminTab === 'pickup-return' && <PickupReturn />}
@@ -199,6 +209,7 @@ const MainAppContent: React.FC = () => {
           />
         )}
         {customerTab === 'catalog' && <Catalog onNavigate={handleCustomerNavigate} />}
+        {customerTab === 'property-map' && <PropertyDiscoveryMap />}
         {customerTab === 'product-detail' && (
           <ProductDetail productId={selectedProductId} onNavigate={handleCustomerNavigate} />
         )}
