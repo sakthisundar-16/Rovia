@@ -21,6 +21,7 @@ import {
 import { Property } from '../../types/propertyTypes';
 import { NearbyFacilities } from './NearbyFacilities';
 import { PropertyMatchScore } from './PropertyMatchScore';
+import { openRazorpayCheckout } from '../../services/razorpayService';
 
 interface PropertyDetailModalProps {
   property: Property | null;
@@ -37,10 +38,41 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'facilities' | 'landlord'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
   const [inquired, setInquired] = useState(false);
+  const [reservedPaymentId, setReservedPaymentId] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   if (!property) return null;
 
   const photos = property.gallery && property.gallery.length > 0 ? property.gallery : [property.coverImage];
+
+  const handleReserveAdvance = () => {
+    setIsProcessingPayment(true);
+    openRazorpayCheckout({
+      amountInRupees: 2000,
+      orderName: `Token Advance: ${property.title}`,
+      description: `Refundable token reservation advance for ${property.bedrooms > 0 ? `${property.bedrooms} BHK` : 'Property'} in ${property.locality}`,
+      prefill: {
+        name: 'Verified Tenant',
+        email: 'tenant@rovia-rentals.in',
+        contact: '+91 98765 43210'
+      },
+      notes: {
+        propertyId: property.id,
+        locality: property.locality,
+        monthlyRent: `₹${property.rentMonthly}`
+      },
+      onSuccess: (resp) => {
+        setIsProcessingPayment(false);
+        setReservedPaymentId(resp.razorpay_payment_id);
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false);
+      },
+      onError: () => {
+        setIsProcessingPayment(false);
+      }
+    });
+  };
 
   const handleDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${property.coordinates.lat},${property.coordinates.lng}`;
@@ -352,7 +384,24 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             <span>Get Directions (Maps)</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {reservedPaymentId ? (
+              <div className="px-3.5 py-2 rounded-xl bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 text-xs font-bold flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Advance Paid (Razorpay: {reservedPaymentId})</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleReserveAdvance}
+                disabled={isProcessingPayment}
+                className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Reserve Token (₹2,000) • Razorpay</span>
+              </button>
+            )}
+
             <button
               type="button"
               disabled={inquired}

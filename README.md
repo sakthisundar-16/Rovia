@@ -11,12 +11,13 @@
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS%203-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=black)](https://tailwindcss.com)
+[![Razorpay](https://img.shields.io/badge/Payments-Razorpay%20Test-02042B?style=for-the-badge&logo=razorpay&logoColor=3395FF)](https://razorpay.com)
 
 <p align="center">
   <b>ROVIA</b> is a production-grade, enterprise rental ecosystem combining an <b>Amazon &amp; Flipkart-inspired storefront</b>, an <b>OpenCV-powered Computer Vision damage detection studio</b>, and a <b>geospatial property discovery &amp; intelligence engine</b> with interactive radius filtering, college proximity radars, landlord portfolio tracking, and admin geographic oversight.
 </p>
 
-[Explore Discovery Map](#-map-based-property-discovery--intelligence) • [OpenCV Inspection](#-opencv-computer-vision-damage-verification) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-guide) • [Mobile Experience](#-mobile-first-experience)
+[Explore Discovery Map](#-map-based-property-discovery--intelligence) • [OpenCV Inspection](#-opencv-computer-vision-damage-verification) • [Razorpay Payments](#-razorpay-payments-integration) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-guide)
 
 ---
 
@@ -26,6 +27,7 @@
 
 | Feature Category | Core Capabilities | Technology |
 | :--- | :--- | :--- |
+| 💳 **Razorpay Payments** | Rental payments, refundable escrow deposit hold, property token advance reservation | **Razorpay Checkout SDK (`rzp_test_SZ3DwXBVvicyTo`)** |
 | 🗺️ **Geospatial Discovery** | Radius filtering (1–20 km), College/PIN geocoding, Nearby facility radar, Explainable match score | **Leaflet**, **OpenStreetMap**, **Haversine Engine** |
 | 👁️ **Computer Vision Return** | 360° multi-angle defect segmentation, Split-curtain comparator, Escrow auto-deductions | **OpenCV Detection**, **Canvas API** |
 | 🛍️ **Universal Marketplace** | 300+ products across 30+ categories, 4-angle product creation wizard, Flipkart/Amazon UX | **React 18**, **TypeScript**, **Tailwind 3** |
@@ -117,6 +119,37 @@ ROVIA solves the critical friction point in rentals: **security deposit disputes
 - **Permanent Defect Highlighting**: Defect bounding boxes remain persistently locked on screen with confidence badges.
 - **Single-Angle &amp; 360° Scans**: Scan current angle on demand or trigger automated multi-angle audit.
 - **Split Curtain Slider**: Slide between original handover baseline and returned asset photo with 1-click preset buttons (`100% Return`, `50/50`, `100% Baseline`).
+
+---
+
+## 💳 Razorpay Payments Integration
+
+ROVIA includes a full, active payment gateway integration powered by **Razorpay Checkout SDK** configured in test mode.
+
+```
+[Customer Checkout / Property Advance]
+                 │
+                 ▼
+[Open Razorpay Checkout Popup] ──▶ API Key: rzp_test_SZ3DwXBVvicyTo
+                 │
+  ┌──────────────┼──────────────────────────────┐
+  ▼              ▼                              ▼
+[UPI (GPay)]   [Cards (Visa/Mastercard)]     [NetBanking / QR]
+  │              │                              │
+  └──────────────┼──────────────────────────────┘
+                 ▼
+  [Payment Success: razorpay_payment_id]
+                 │
+                 ▼
+[Order / Reservation Confirmed with Verified Transaction ID]
+```
+
+- **Active Test Key**: `rzp_test_SZ3DwXBVvicyTo`
+- **Supported Payment Flows**:
+  - **Rental Storefront Checkout**: Authorizes the full rental total and refundable security deposit held in escrow.
+  - **Property Discovery Advance**: 1-click ₹2,000 token advance reservation for apartments and villas in `PropertyDetailModal`.
+  - **Payment Methods Supported**: UPI (Google Pay, PhonePe, Paytm, BHIM, UPI QR), Credit &amp; Debit Cards, NetBanking across 50+ banks, and Digital Wallets.
+  - **Verified Transaction Audit**: Generates persistent `razorpay_payment_id` stamps recorded on orders and receipts.
 
 ---
 

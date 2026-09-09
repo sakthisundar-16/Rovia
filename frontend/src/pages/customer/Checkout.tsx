@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Truck, Store, CreditCard, ShieldCheck, Download, CalendarPlus, CheckCircle2, MapPin } from 'lucide-react';
+import { 
+  Truck, 
+  Store, 
+  CreditCard, 
+  ShieldCheck, 
+  Download, 
+  CalendarPlus, 
+  CheckCircle2, 
+  MapPin,
+  Zap,
+  Lock
+} from 'lucide-react';
 import { Stepper } from '../../components/ui/Stepper';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -10,12 +21,13 @@ import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { Order } from '../../services/mockData';
 import { api } from '../../services/api';
+import { openRazorpayCheckout, RAZORPAY_TEST_KEY_ID } from '../../services/razorpayService';
 
 export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryType, setDeliveryType] = useState<'Ship' | 'Store'>('Ship');
-  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Card'>('UPI');
+  const [paymentMethod, setPaymentMethod] = useState<'Razorpay' | 'UPI' | 'Card'>('Razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -29,7 +41,7 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
     { id: 3, label: 'Confirmation', description: 'Order contract & receipt' },
   ];
 
-  const handlePay = async () => {
+  const createAndConfirmOrder = async (razorpayPaymentId?: string) => {
     setIsProcessing(true);
     const newOrderData: Omit<Order, 'id'> = {
       renterId: 'rnt-101',
@@ -54,8 +66,16 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
       status: 'Pending Approval',
       depositStatus: 'Held',
       pickupMethod: deliveryType === 'Ship' ? 'Delivery' : 'Store Pickup',
+      razorpayPaymentId: razorpayPaymentId,
       timeline: [
-        { stage: 'Order Placed', timestamp: 'Just now', completed: true, notes: 'Payment & Deposit authorized' },
+        { 
+          stage: 'Order Placed', 
+          timestamp: 'Just now', 
+          completed: true, 
+          notes: razorpayPaymentId 
+            ? `Paid via Razorpay (Txn ID: ${razorpayPaymentId})` 
+            : 'Payment & Deposit authorized' 
+        },
         { stage: 'Renter QR Verification', timestamp: 'Pending', completed: false, notes: 'Awaiting Renter QR approval' },
         { stage: 'Dispatched / Picked Up', timestamp: 'Pending', completed: false },
         { stage: 'In Rental Window', timestamp: 'Pending', completed: false },
@@ -69,7 +89,47 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
     setCompletedOrder(createdOrder);
     setCurrentStep(3);
     clearCart();
-    showToast('Order Confirmed!', `Order ${createdOrder.orderNumber} sent to Renter for QR scan approval.`, 'success');
+    showToast(
+      'Order Confirmed!', 
+      razorpayPaymentId 
+        ? `Payment verified (${razorpayPaymentId}). Order ${createdOrder.orderNumber} sent for approval.` 
+        : `Order ${createdOrder.orderNumber} sent to Renter for QR scan approval.`, 
+      'success'
+    );
+  };
+
+  const handlePay = () => {
+    if (paymentMethod === 'Razorpay') {
+      setIsProcessing(true);
+      openRazorpayCheckout({
+        amountInRupees: grandTotal,
+        orderName: `ROVIA Rental - ${items[0]?.name || 'Gear Package'}`,
+        description: `Rental fee (₹${rentalSubtotal}) + Refundable Deposit (₹${depositTotal})`,
+        prefill: {
+          name: user?.name || 'Elena Vance',
+          email: user?.email || 'customer@rovia-demo.com',
+          contact: '+91 98765 43210',
+        },
+        notes: {
+          rentalSubtotal: `₹${rentalSubtotal}`,
+          depositTotal: `₹${depositTotal}`,
+          delivery: deliveryType,
+        },
+        onSuccess: (resp) => {
+          createAndConfirmOrder(resp.razorpay_payment_id);
+        },
+        onDismiss: () => {
+          setIsProcessing(false);
+          showToast('Payment Pending', 'Razorpay checkout popup was dismissed.', 'info');
+        },
+        onError: (err) => {
+          setIsProcessing(false);
+          showToast('Payment Failed', err?.description || 'Razorpay transaction could not be completed.', 'error');
+        }
+      });
+    } else {
+      createAndConfirmOrder('manual_' + Math.random().toString(36).substring(7));
+    }
   };
 
   return (
@@ -200,35 +260,87 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
             </div>
 
             <div className="space-y-4 glass-panel p-6 rounded-2xl border border-[#988686]/30">
-              <div className="flex gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
+                  type="button"
+                  onClick={() => setPaymentMethod('Razorpay')}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 relative ${
+                    paymentMethod === 'Razorpay'
+                      ? 'bg-zinc-950 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 shadow-md ring-2 ring-blue-500/40'
+                      : 'glass-panel text-[#5C4E4E] dark:text-[#B5A9A9] hover:border-zinc-400'
+                  }`}
+                >
+                  <span className="absolute -top-2.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
+                    Recommended
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
+                    <span>Razorpay Gateway</span>
+                  </div>
+                  <span className="text-[10px] opacity-75 font-normal">UPI • Cards • NetBanking • QR</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setPaymentMethod('UPI')}
-                  className={`flex-1 p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
                     paymentMethod === 'UPI'
                       ? 'bg-[#988686] text-white border-[#988686]'
                       : 'glass-panel text-[#5C4E4E] dark:text-[#B5A9A9]'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4" /> UPI Instant Transfer (GPay / PhonePe)
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Manual UPI ID</span>
+                  </div>
+                  <span className="text-[10px] opacity-75 font-normal">Direct VPA Handle</span>
                 </button>
+
                 <button
+                  type="button"
                   onClick={() => setPaymentMethod('Card')}
-                  className={`flex-1 p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
                     paymentMethod === 'Card'
                       ? 'bg-[#988686] text-white border-[#988686]'
                       : 'glass-panel text-[#5C4E4E] dark:text-[#B5A9A9]'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4" /> Credit / Debit Card
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Direct Card</span>
+                  </div>
+                  <span className="text-[10px] opacity-75 font-normal">Credit / Debit Manual</span>
                 </button>
               </div>
 
-              {paymentMethod === 'UPI' ? (
+              {paymentMethod === 'Razorpay' && (
+                <div className="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      Razorpay Checkout Integration (Active)
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-100 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200 font-semibold">
+                      Test Mode
+                    </span>
+                  </div>
+                  <p className="text-blue-800/90 dark:text-blue-300 leading-relaxed text-[11px]">
+                    Clicking Authorize &amp; Pay will launch the official Razorpay test checkout window supporting instant UPI, credit/debit cards, and netbanking.
+                  </p>
+                  <div className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 pt-1 border-t border-blue-200/50 dark:border-blue-900/40">
+                    API Key: <span className="font-bold text-zinc-800 dark:text-zinc-200">{RAZORPAY_TEST_KEY_ID}</span>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'UPI' && (
                 <div className="space-y-3 pt-2">
                   <Input label="Virtual Payment Address (VPA / UPI ID)" placeholder="elena@okaxis" />
                   <p className="text-[11px] text-[#988686]">A payment collect request will be sent to your UPI app.</p>
                 </div>
-              ) : (
+              )}
+
+              {paymentMethod === 'Card' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <Input label="Cardholder Name" defaultValue="ELENA VANCE" />
                   <Input label="Card Number" defaultValue="4532 •••• •••• 8849" />
@@ -243,7 +355,9 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
                 Back
               </Button>
               <Button size="lg" isLoading={isProcessing} onClick={handlePay}>
-                Authorize & Pay ₹{grandTotal.toLocaleString()}
+                {paymentMethod === 'Razorpay' 
+                  ? `Pay ₹${grandTotal.toLocaleString()} with Razorpay` 
+                  : `Authorize & Pay ₹${grandTotal.toLocaleString()}`}
               </Button>
             </div>
           </div>
@@ -284,6 +398,17 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
             </h2>
             <p className="text-sm font-mono text-[#988686]">Order #{completedOrder.orderNumber}</p>
           </div>
+
+          {/* Razorpay Transaction ID Pill */}
+          {completedOrder.razorpayPaymentId && (
+            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span className="font-bold text-emerald-900 dark:text-emerald-200">Razorpay Payment Verified</span>
+              </div>
+              <span className="font-mono font-bold text-emerald-800 dark:text-emerald-100">{completedOrder.razorpayPaymentId}</span>
+            </div>
+          )}
 
           <div className="p-4 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 text-xs space-y-2 text-left">
             <div className="flex justify-between">

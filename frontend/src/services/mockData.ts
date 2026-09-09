@@ -96,6 +96,7 @@ export interface Order {
   penaltyPaid?: boolean;
   timeline: OrderTimeline[];
   pickupMethod: 'Delivery' | 'Store Pickup' | 'In-Store Pickup';
+  razorpayPaymentId?: string;
 }
 
 export interface DepositLedger {
