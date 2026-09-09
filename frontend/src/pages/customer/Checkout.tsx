@@ -9,13 +9,16 @@ import {
   CheckCircle2, 
   MapPin,
   Zap,
-  Lock
+  Lock,
+  FileText,
+  Printer
 } from 'lucide-react';
 import { Stepper } from '../../components/ui/Stepper';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { InvoicePreviewModal } from '../../components/common/InvoicePreviewModal';
+import { generateRoviaPrintableInvoice } from '../../components/common/InteractiveInvoice';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../context/AuthContext';
@@ -386,61 +389,142 @@ export const Checkout: React.FC<{ onNavigate: (tab: string) => void }> = ({ onNa
 
       {/* Step 3: Confirmation Screen */}
       {currentStep === 3 && completedOrder && (
-        <div className="max-w-2xl mx-auto glass-panel p-8 sm:p-12 rounded-3xl border border-[#988686]/40 shadow-2xl text-center space-y-6 animate-fadeIn">
-          <div className="w-16 h-16 rounded-full bg-[#5E7A63]/20 text-[#5E7A63] flex items-center justify-center mx-auto shadow-warm-md">
-            <CheckCircle2 className="w-10 h-10" />
-          </div>
+        <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
+          {/* Success Banner */}
+          <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-[#988686]/40 shadow-2xl text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-[#5E7A63]/20 text-[#5E7A63] flex items-center justify-center mx-auto shadow-warm-md">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#988686]">RESERVATION AUTHORIZED</span>
-            <h2 className="font-heading text-3xl font-bold text-[#000000] dark:text-white">
-              Rental Contract Confirmed!
-            </h2>
-            <p className="text-sm font-mono text-[#988686]">Order #{completedOrder.orderNumber}</p>
-          </div>
+            <div className="space-y-1">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#988686] font-bold">
+                RENTAL BAILMENT CONFIRMED
+              </span>
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-[#000000] dark:text-white">
+                Payment Authorized &amp; Order Placed!
+              </h2>
+              <p className="text-sm font-mono text-[#5C4E4E] dark:text-[#D1D0D0]">
+                Contract #{completedOrder.orderNumber} • Billed to {completedOrder.customerName}
+              </p>
+            </div>
 
-          {/* Razorpay Transaction ID Pill */}
-          {completedOrder.razorpayPaymentId && (
-            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span className="font-bold text-emerald-900 dark:text-emerald-200">Razorpay Payment Verified</span>
+            {/* Razorpay Transaction ID Pill */}
+            {completedOrder.razorpayPaymentId && (
+              <div className="p-3.5 max-w-xl mx-auto rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span className="font-bold text-emerald-900 dark:text-emerald-200">Razorpay Payment Verified</span>
+                </div>
+                <span className="font-mono font-bold text-emerald-800 dark:text-emerald-100">
+                  {completedOrder.razorpayPaymentId}
+                </span>
               </div>
-              <span className="font-mono font-bold text-emerald-800 dark:text-emerald-100">{completedOrder.razorpayPaymentId}</span>
-            </div>
-          )}
-
-          <div className="p-4 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 text-xs space-y-2 text-left">
-            <div className="flex justify-between">
-              <span className="text-[#988686]">Product:</span>
-              <span className="font-bold text-[#000000] dark:text-white">{completedOrder.productName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#988686]">Return-By Date:</span>
-              <span className="font-bold text-[#A0524E] font-mono">{completedOrder.rentalWindow.end} (Before 18:00)</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#988686]">Deposit Held:</span>
-              <span className="font-bold text-[#5E7286] font-mono">₹{completedOrder.depositAmount.toLocaleString()} (Refundable)</span>
-            </div>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-            <Button
-              variant="outline"
-              leftIcon={<Download className="w-4 h-4" />}
-              onClick={() => setShowInvoiceModal(true)}
-            >
-              Download PDF Invoice
-            </Button>
+          {/* Official ROVIA Invoice Preview Card */}
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[#988686]/40 shadow-xl space-y-6">
+            {/* Official ROVIA Invoice Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D1D0D0]/40 dark:border-[#5C4E4E]/40 pb-5">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/rovia_logo.jpg"
+                  alt="ROVIA"
+                  className="w-12 h-12 rounded-xl object-contain shadow-warm-sm border border-[#988686]/30 bg-white p-0.5"
+                />
+                <div>
+                  <h3 className="font-heading text-xl font-bold text-[#000000] dark:text-white">
+                    ROVIA ATELIER
+                  </h3>
+                  <p className="text-[10px] uppercase tracking-widest text-[#988686] font-bold">
+                    RENT • USE • RETURN • REUSE
+                  </p>
+                  <p className="text-[11px] text-[#5C4E4E] dark:text-[#B5A9A9]">
+                    GSTIN: 33AAAAA0000A1Z5 • Official Electronic Tax Invoice
+                  </p>
+                </div>
+              </div>
 
-            <Button
-              variant="primary"
-              leftIcon={<CalendarPlus className="w-4 h-4" />}
-              onClick={() => onNavigate('my-rentals')}
-            >
-              View My Rentals Timeline
-            </Button>
+              <div className="text-left sm:text-right">
+                <span className="text-xs font-mono font-bold bg-[#988686]/15 text-[#000000] dark:text-white px-3 py-1 rounded-lg">
+                  INV-{completedOrder.orderNumber}
+                </span>
+                <p className="text-xs text-[#5C4E4E] dark:text-[#B5A9A9] mt-1">
+                  Status: <strong className="text-emerald-600 dark:text-emerald-400">Payment Settled</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Two-Column Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 space-y-2">
+                <span className="font-bold uppercase tracking-wider text-[#988686] text-[10px] block">
+                  Rental Package Details
+                </span>
+                <p className="font-bold text-sm text-[#000000] dark:text-white">{completedOrder.productName}</p>
+                <p className="text-[#5C4E4E] dark:text-[#D1D0D0]">Tier / Variant: {completedOrder.variant}</p>
+                <p className="text-[#5C4E4E] dark:text-[#D1D0D0]">Fulfillment: {completedOrder.pickupMethod}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-[#988686]/10 border border-[#988686]/20 space-y-2">
+                <span className="font-bold uppercase tracking-wider text-[#988686] text-[10px] block">
+                  Rental Window &amp; Escrow
+                </span>
+                <p className="font-bold text-sm text-[#000000] dark:text-white">
+                  {completedOrder.rentalWindow.start} → {completedOrder.rentalWindow.end}
+                </p>
+                <p className="text-[#5C4E4E] dark:text-[#D1D0D0]">
+                  Return Deadline: <strong className="text-[#A0524E]">Before 18:00 (4h Grace Period Included)</strong>
+                </p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  Deposit Held: ₹{completedOrder.depositAmount.toLocaleString()} (100% Refundable)
+                </p>
+              </div>
+            </div>
+
+            {/* Financial Summary Strip */}
+            <div className="p-4 rounded-2xl bg-white/60 dark:bg-black/40 border border-[#988686]/20 flex flex-wrap items-center justify-between gap-4 text-xs">
+              <div>
+                <span className="text-[#988686]">Rental Fee: </span>
+                <strong className="text-[#000000] dark:text-white">₹{completedOrder.rentalFee.toLocaleString()}</strong>
+                <span className="text-[#988686] ml-3">Taxes (18% GST): </span>
+                <strong className="text-[#000000] dark:text-white">₹{completedOrder.taxAmount.toLocaleString()}</strong>
+              </div>
+              <div className="text-base font-bold text-[#000000] dark:text-white">
+                <span>Grand Total Settled: </span>
+                <span className="font-mono text-[#988686]">₹{completedOrder.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons: "Generate Invoice", "Print Invoice", "View Timeline" */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 pt-2">
+              <Button
+                variant="primary"
+                leftIcon={<FileText className="w-4 h-4" />}
+                onClick={() => setShowInvoiceModal(true)}
+                className="px-6 py-3 text-sm font-bold shadow-lg fk-btn-press"
+              >
+                Generate Invoice
+              </Button>
+
+              <Button
+                variant="outline"
+                leftIcon={<Printer className="w-4 h-4" />}
+                onClick={() => generateRoviaPrintableInvoice(completedOrder)}
+                className="px-5 py-3 text-sm font-bold fk-btn-press"
+              >
+                Print / Download PDF
+              </Button>
+
+              <Button
+                variant="outline"
+                leftIcon={<CalendarPlus className="w-4 h-4" />}
+                onClick={() => onNavigate('my-rentals')}
+                className="px-5 py-3 text-sm font-bold fk-btn-press"
+              >
+                View My Rentals
+              </Button>
+            </div>
           </div>
         </div>
       )}

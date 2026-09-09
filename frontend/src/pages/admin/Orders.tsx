@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Download, CheckCircle2, Edit, Save, Calendar, ShieldCheck, Tag } from 'lucide-react';
+import { Search, Filter, Eye, Download, CheckCircle2, Edit, Save, Calendar, ShieldCheck, Tag, FileText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -224,10 +224,10 @@ export const Orders: React.FC<{ selectedOrderId?: string }> = ({ selectedOrderId
               </div>
 
               <div className="flex items-center gap-3">
-                <Button size="sm" variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={() => setShowInvoiceModal(true)}>
-                  Invoice PDF
+                <Button size="sm" variant="outline" leftIcon={<FileText className="w-4 h-4" />} onClick={() => setShowInvoiceModal(true)} className="fk-btn-press text-xs font-bold">
+                  Generate Invoice
                 </Button>
-                <Button size="sm" variant="primary" leftIcon={<CheckCircle2 className="w-4 h-4" />} onClick={() => handleMarkPickedUp(selectedOrder.id)}>
+                <Button size="sm" variant="primary" leftIcon={<CheckCircle2 className="w-4 h-4" />} onClick={() => handleMarkPickedUp(selectedOrder.id)} className="fk-btn-press text-xs font-bold">
                   Mark Picked Up
                 </Button>
               </div>

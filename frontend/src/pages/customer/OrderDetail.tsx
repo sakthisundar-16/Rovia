@@ -103,8 +103,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onNavigate })
           </h1>
         </div>
 
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={() => setShowInvoiceModal(true)}>
-          Download Tax Invoice PDF
+        <Button variant="primary" leftIcon={<FileText className="w-4 h-4" />} onClick={() => setShowInvoiceModal(true)} className="fk-btn-press font-bold text-sm">
+          Generate Invoice
         </Button>
       </div>
 

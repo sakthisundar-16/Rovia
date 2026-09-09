@@ -3,6 +3,7 @@ import { Clock, ShieldCheck, AlertTriangle, ArrowRight, Download, FileText, Chec
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge, BadgeVariant } from '../../components/ui/Badge';
+import { InvoicePreviewModal } from '../../components/common/InvoicePreviewModal';
 import { Order } from '../../services/mockData';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +16,7 @@ interface MyRentalsProps {
 export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
   const [filterTab, setFilterTab] = useState<'All' | 'Active' | 'Upcoming' | 'Past' | 'Overdue'>('All');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -149,15 +151,20 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
                 <div className="flex items-center gap-3 text-[#A0524E]">
                   <AlertTriangle className="w-5 h-5 shrink-0" />
                   <div>
-                    <h4 className="font-bold text-sm">Overdue Return Notice — {order.daysOverdue} Days Past Schedule</h4>
+                    <h4 className="font-bold text-sm">Overdue Return Notice — {order.daysOverdue || 1} Days Past Schedule</h4>
                     <p className="text-[11px] text-[#5C4E4E] dark:text-[#B5A9A9]">
-                      Estimated penalty: ₹{order.estimatedPenalty?.toLocaleString()} (@ ₹9,800/day). Please return immediately or request an extension.
+                      Accrued penalty: ₹{order.estimatedPenalty?.toLocaleString() || '0'} (Tiered rate + 4h grace window applied). Return immediately to prevent further escalation.
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="destructive" onClick={() => onNavigate('return-flow')}>
-                  Return Instructions
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />} onClick={() => setSelectedInvoiceOrder(order)} className="fk-btn-press text-xs font-bold">
+                    Generate Invoice
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => onNavigate('return-flow')} className="fk-btn-press text-xs font-bold">
+                    Return Instructions
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -173,15 +180,20 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="destructive" onClick={async () => {
-                  const updated = await api.updateOrder(order.id, { penaltyPaid: true, timeline: [...order.timeline, { stage: 'Penalty Invoice Paid', timestamp: new Date().toISOString(), completed: true }] });
-                  if (updated) {
-                    showToast('Penalty Paid', 'Penalty invoice has been settled successfully.', 'success');
-                    setOrders(prev => prev.map(o => o.id === order.id ? updated : o));
-                  }
-                }}>
-                  Pay Penalty Now
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />} onClick={() => setSelectedInvoiceOrder(order)} className="fk-btn-press text-xs font-bold">
+                    Generate Invoice
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={async () => {
+                    const updated = await api.updateOrder(order.id, { penaltyPaid: true, timeline: [...order.timeline, { stage: 'Penalty Invoice Paid', timestamp: new Date().toISOString(), completed: true }] });
+                    if (updated) {
+                      showToast('Penalty Paid', 'Penalty invoice has been settled successfully.', 'success');
+                      setOrders(prev => prev.map(o => o.id === order.id ? updated : o));
+                    }
+                  }} className="fk-btn-press text-xs font-bold">
+                    Pay Penalty Now
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -305,12 +317,22 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
             </div>
 
             {/* Footer Action */}
-            <div className="flex justify-end pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<FileText className="w-3.5 h-3.5" />}
+                onClick={() => setSelectedInvoiceOrder(order)}
+                className="fk-btn-press text-xs font-bold"
+              >
+                Generate Invoice
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
                 rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
                 onClick={() => onNavigate('order-detail', order.id)}
+                className="fk-btn-press text-xs font-semibold"
               >
                 View Full Timeline &amp; Deposit Ledger
               </Button>
@@ -318,6 +340,13 @@ export const MyRentals: React.FC<MyRentalsProps> = ({ onNavigate }) => {
           </Card>
         ))}
       </div>
+
+      {/* Invoice Modal */}
+      <InvoicePreviewModal
+        isOpen={Boolean(selectedInvoiceOrder)}
+        onClose={() => setSelectedInvoiceOrder(null)}
+        order={selectedInvoiceOrder}
+      />
     </div>
   );
 };

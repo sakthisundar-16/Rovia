@@ -27,6 +27,7 @@ import {
 
 import { apiFetch, toBackendCategory, fromBackendCategory } from './apiClient';
 import { EXTENDED_PRODUCTS } from './productsData';
+import { evaluateOrderOverdue } from './lateFeeEngine';
 
 // ─── camelCase ↔ backend schema converters ────────────────────────────────────
 
@@ -245,13 +246,14 @@ export const api = {
       const res = await apiFetch('/rentals');
       if (res.ok) {
         const data: any[] = await res.json();
-        const orders = data.map(orderFromApi);
+        const orders = data.map(orderFromApi).map(o => evaluateOrderOverdue(o));
         saveStored('rovia_orders', orders);
         localOrders = orders;
         return renterId ? orders.filter(o => o.renterId === renterId) : orders;
       }
     } catch {}
-    localOrders = loadStored('rovia_orders', INITIAL_ORDERS);
+    const rawOrders = loadStored('rovia_orders', INITIAL_ORDERS);
+    localOrders = rawOrders.map(o => evaluateOrderOverdue(o));
     return renterId ? localOrders.filter(o => o.renterId === renterId || o.renterId === 'rnt-101' || !o.renterId) : localOrders;
   },
 
